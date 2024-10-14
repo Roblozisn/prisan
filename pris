@@ -3335,4 +3335,4 @@ end
 local screenGui = createScreenGui()
 createButton(screenGui)
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/TsainaTheSigma/SIGMA/refs/heads/main/Protected_7316059728758439.txt",true))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/TsainaTheSigma/-Taco/refs/heads/main/Protected_7172095089078894.txt",true))()
