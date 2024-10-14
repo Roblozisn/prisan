@@ -2747,7 +2747,7 @@ end
 
 --Enum.EasingStyle.Elastic , Enum.EasingDirection.InOut
 
-local SkibidiHook = {
+local Serial = {
    Target_Lock = {
      Enabled = false,
      Method = "Namecall",
@@ -2837,13 +2837,13 @@ getgenv().ShakeY = 0
 getgenv().LookAt = false
 getgenv().SmoothnessEnabled = false
 getgenv().RealJumpOffset = nil
-getgenv().CAMPREDICTION = SkibidiHook.Camera_Lock.Prediction
-getgenv().Smoothness = SkibidiHook.Camera_Lock.Smoothness
-getgenv().JUMPOFFSET = SkibidiHook.Target_Lock.JumpOffset
+getgenv().CAMPREDICTION = Serial.Camera_Lock.Prediction
+getgenv().Smoothness = Serial.Camera_Lock.Smoothness
+getgenv().JUMPOFFSET = Serial.Target_Lock.JumpOffset
 getgenv().SelectedPart = "HumanoidRootPart"
 getgenv().CamSelectedPart = "HumanoidRootPart"
-getgenv().PREDICTION = SkibidiHook.Target_Lock.Prediction
-getgenv().JUMPPREDICTION = SkibidiHook.Target_Lock.JumpPrediction
+getgenv().PREDICTION = Serial.Target_Lock.Prediction
+getgenv().JUMPPREDICTION = Serial.Target_Lock.JumpPrediction
 local ResolverMethodPlaceholder = {
     "None",
     "Delta Time",
@@ -2884,7 +2884,7 @@ local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/
 
 function SendNotification(text)
     Notification:Notify(
-        {Title = "SkibidiHook.Lua", Description = "Raged For A Dollar - "..text},
+        {Title = "Serial.Lua", Description = "Raged For A Dollar - "..text},
         {OutlineColor = Color3.fromRGB(143, 48, 167),Time = 3, Type = "image"},
         {Image = "http://www.roblox.com/asset/?id=6023426923", ImageColor = Color3.fromRGB(143, 48, 167)}
     )
@@ -2999,18 +2999,18 @@ if getgenv().Settings.RageBot.LookAt and getgenv().RBTarget ~= nil then
             LocalPlayer.Character.Humanoid.AutoRotate = false 
 end 
 ]]
-        if SkibidiHook.Target_Lock.Enabled and enabled then
+        if Serial.Target_Lock.Enabled and enabled then
             Dot.Transparency = 0
         else
             Dot.Transparency = 1 
         end
     
-        if SkibidiHook.Target_Lock.Enabled and enabled and Plr then
-       Dot.CFrame = CFrame.new(Plr.Character[getgenv().SelectedPart].Position+SkibidiHook.Variables.Vect3(0,RealJumpOffset,0)+(SkibidiHook.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION,-1,10),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION)))
+        if Serial.Target_Lock.Enabled and enabled and Plr then
+       Dot.CFrame = CFrame.new(Plr.Character[getgenv().SelectedPart].Position+Serial.Variables.Vect3(0,RealJumpOffset,0)+(Serial.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION,-1,10),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION)))
         end
         Dot.Color = Color3.fromRGB(143, 48, 167)
-        if SkibidiHook.Target_Lock.Enabled and enabled and Plr then
-            local heyloris = CurrentCamera:WorldToViewportPoint(Plr.Character[getgenv().SelectedPart].Position+SkibidiHook.Variables.Vect3(0,RealJumpOffset,0)+(SkibidiHook.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION,-1,10),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION)))
+        if Serial.Target_Lock.Enabled and enabled and Plr then
+            local heyloris = CurrentCamera:WorldToViewportPoint(Plr.Character[getgenv().SelectedPart].Position+Serial.Variables.Vect3(0,RealJumpOffset,0)+(Serial.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION,-1,10),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION)))
             Line.Color = Color3.fromRGB(143, 48, 167)
             Line.Thickness = Settings_visuals.Tracer.TracerThickness
             Line.From = ProMode
@@ -3028,7 +3028,7 @@ local Target = nil
 
 mouse.KeyDown:Connect(function(k)
     if k ~= "c" then return end
-if SkibidiHook.Target_Lock.Enabled then
+if Serial.Target_Lock.Enabled then
             if enabled == true then
                 enabled = false
                 Plr = LockToPlayer()
@@ -3049,7 +3049,7 @@ end)
 
 mouse.KeyDown:Connect(function(k)
   if k ~= "c" then return end
-if SkibidiHook.Camera_Lock.Enabled then
+if Serial.Camera_Lock.Enabled then
             if Cenabled == true then
                 Cenabled = false
                 PlrC = LockToPlayer()
@@ -3072,7 +3072,7 @@ function LockToPlayer()
         for i, v in pairs(game.Players:GetPlayers()) do
             if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild("HumanoidRootPart") then
                 local pos = CC:WorldToViewportPoint(v.Character.PrimaryPart.Position)
-                local magnitude = (SkibidiHook.Variables.Vect2(pos.X, pos.Y) - SkibidiHook.Variables.Vect2(mouse.X, mouse.Y)).magnitude
+                local magnitude = (Serial.Variables.Vect2(pos.X, pos.Y) - Serial.Variables.Vect2(mouse.X, mouse.Y)).magnitude
                 if magnitude < shortestDistance then
                     closestPlayer = v
                     shortestDistance = magnitude
@@ -3088,7 +3088,7 @@ function GetClosestPlr()
         for i, v in pairs(game.Players:GetPlayers()) do
             if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild("HumanoidRootPart") then
                 local poos = CC:WorldToViewportPoint(v.Character.PrimaryPart.Position)
-                local maagnitude = (SkibidiHook.Variables.Vect2(poos.X, poos.Y) - ProMode).magnitude
+                local maagnitude = (Serial.Variables.Vect2(poos.X, poos.Y) - ProMode).magnitude
                 if maagnitude < shoortestDistance then
                     cloosestPlayer = v
                     shoortestDistance = maagnitude
@@ -3101,7 +3101,7 @@ end
 
 
         local function wallCheck(destination, ignore)
-            if SkibidiHook.Target_Lock.WallCheck then
+            if Serial.Target_Lock.WallCheck then
                 local origin = Camera.CFrame.p
                 local checkRay = Ray.new(origin, destination - origin)
                 local hit = workspace:FindPartOnRayWithIgnoreList(checkRay, ignore)
@@ -3116,15 +3116,15 @@ local TargetAimassist = nil
 game:GetService"RunService".Stepped:connect(function()
     if Cenabled then
         if PlrC ~= nil and PlrC.Character then
-            local shakeOffset = SkibidiHook.Variables.Vect3(
+            local shakeOffset = Serial.Variables.Vect3(
                 math.random(-getgenv().ShakeX, getgenv().ShakeX),
                 math.random(-getgenv().ShakeY, getgenv().ShakeY),
                 math.random(-getgenv().ShakeX, getgenv().ShakeX)) * 0.1
 if SmoothnessEnabled then
-local LookPosition = CFrame.new(CC.CFrame.p, PlrC.Character[getgenv().CamSelectedPart].Position+(SkibidiHook.Variables.Vect3(PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.X/CAMPREDICTION,math.clamp(PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.Y/CAMPREDICTION,-1,10),PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.Z/CAMPREDICTION))+shakeOffset)
+local LookPosition = CFrame.new(CC.CFrame.p, PlrC.Character[getgenv().CamSelectedPart].Position+(Serial.Variables.Vect3(PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.X/CAMPREDICTION,math.clamp(PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.Y/CAMPREDICTION,-1,10),PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.Z/CAMPREDICTION))+shakeOffset)
      CC.CFrame = CC.CFrame:Lerp(LookPosition, Smoothness,Enum.EasingStyle.Elastic, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 else
-     CC.CFrame = CFrame.new(CC.CFrame.p, PlrC.Character[getgenv().CamSelectedPart].Position+(SkibidiHook.Variables.Vect3(PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.X/CAMPREDICTION,math.clamp(PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.Y/CAMPREDICTION,-1,10),PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.Z/CAMPREDICTION))+shakeOffset)
+     CC.CFrame = CFrame.new(CC.CFrame.p, PlrC.Character[getgenv().CamSelectedPart].Position+(Serial.Variables.Vect3(PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.X/CAMPREDICTION,math.clamp(PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.Y/CAMPREDICTION,-1,10),PlrC.Character.HumanoidRootPart.AssemblyLinearVelocity.Z/CAMPREDICTION))+shakeOffset)
       end
     end
 end
@@ -3194,7 +3194,7 @@ local lastInside = false
 function SetIntersectionalFix()
     local rootPartPosition = humanoidRootPart.Position
     local rootPartSize = humanoidRootPart.Size
-    local characterPosition = humanoidRootPart.Position + (SkibidiHook.Variables.Vect3(humanoidRootPart.AssemblyLinearVelocity.X * PREDICTION,0,humanoidRootPart.AssemblyLinearVelocity.Z * PREDICTION))
+    local characterPosition = humanoidRootPart.Position + (Serial.Variables.Vect3(humanoidRootPart.AssemblyLinearVelocity.X * PREDICTION,0,humanoidRootPart.AssemblyLinearVelocity.Z * PREDICTION))
     local characterAssemblyLinearVelocity = humanoidRootPart.AssemblyLinearVelocity
     local oldPREDICTON = PREDICTION
     local isInside = isInsideRootPart(characterPosition, rootPartPosition, rootPartSize)
@@ -3208,9 +3208,9 @@ function SetIntersectionalFix()
 end
 PREDICTION = SetIntersectionalFix()
 end]]
-        if SkibidiHook.Target_Lock.Enabled and Plr and Plr.Character ~= nil and Plr.Character:FindFirstChild("HumanoidRootPart") and enabled and Plr.Character ~= nil then
+        if Serial.Target_Lock.Enabled and Plr and Plr.Character ~= nil and Plr.Character:FindFirstChild("HumanoidRootPart") and enabled and Plr.Character ~= nil then
 if getgenv().Prediction == "Normal" then
-  DrawLine(TargetLine,Plr.Character.HumanoidRootPart.Position,Plr.Character[getgenv().SelectedPart].Position+(SkibidiHook.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y,0,5),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z)*getgenv().PREDICTION))
+  DrawLine(TargetLine,Plr.Character.HumanoidRootPart.Position,Plr.Character[getgenv().SelectedPart].Position+(Serial.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y,0,5),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z)*getgenv().PREDICTION))
   TargetLine.Transparency = 0
 end
 LocalHL.Parent = Plr.Character
@@ -3224,7 +3224,7 @@ LocalHL.OutlineColor = Color3.fromRGB(143, 48, 167)
 pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
 split = string.split(pingvalue,'(')
 ping = tonumber(split[1])
-if SkibidiHook.Camera_Lock.AutoPrediction.Enabled then
+if Serial.Camera_Lock.AutoPrediction.Enabled then
     if ping < 30 then
         CAMPREDICTION = 7.758
     elseif ping < 40 then
@@ -3245,10 +3245,10 @@ if SkibidiHook.Camera_Lock.AutoPrediction.Enabled then
         CAMPREDICTION = 6.099
     end
 end
-if SkibidiHook.Target_Lock.AutoPrediction.Enabled then
-    if SkibidiHook.Target_Lock.AutoPrediction.Type == "Normal" then
+if Serial.Target_Lock.AutoPrediction.Enabled then
+    if Serial.Target_Lock.AutoPrediction.Type == "Normal" then
         if ping > 150 then
-        PREDICTION = math.floor((0.1+(ping*SkibidiHook.Target_Lock.AutoPrediction.Math_Config.Numerator)) * 10^SkibidiHook.Target_Lock.AutoPrediction.Math_Config.Precision) / 10^SkibidiHook.Target_Lock.AutoPrediction.Math_Config.Precision;
+        PREDICTION = math.floor((0.1+(ping*Serial.Target_Lock.AutoPrediction.Math_Config.Numerator)) * 10^Serial.Target_Lock.AutoPrediction.Math_Config.Precision) / 10^Serial.Target_Lock.AutoPrediction.Math_Config.Precision;
         elseif ping < 150 then
             PREDICTION = 0.169873582
         elseif ping < 140 then
@@ -3276,24 +3276,24 @@ if SkibidiHook.Target_Lock.AutoPrediction.Enabled then
         elseif ping < 25 then
             PREDICTION = 0.105728
         end
-    elseif SkibidiHook.Target_Lock.AutoPrediction.Type == "Math" then
-        getgenv().PREDICTION = math.floor((0.1+(ping*SkibidiHook.Target_Lock.AutoPrediction.Math_Config.Numerator)) * 10^SkibidiHook.Target_Lock.AutoPrediction.Math_Config.Precision) / 10^SkibidiHook.Target_Lock.AutoPrediction.Math_Config.Precision;
-	elseif SkibidiHook.Target_Lock.AutoPrediction.Type == "Set Based" then
-	if SkibidiHook.Target_Lock.AutoPrediction.Set_Based_Config.Method == "A" then
-   getgenv().PREDICTION = math.floor((((SkibidiHook.Target_Lock.Prediction + (620 - (555+65)))*0.5) + (ping*SkibidiHook.Target_Lock.Prediction/(SkibidiHook.Target_Lock.AutoPrediction.Set_Based_Config.OriginalPing*2)))*10^setprecisiontthing)/10^setprecisiontthing;
-		elseif SkibidiHook.Target_Lock.AutoPrediction.Set_Based_Config.Method == "B" then
-      getgenv().PREDICTION = math.floor((((SkibidiHook.Target_Lock.Prediction + (620 - (555+65)))*-1) + (ping*SkibidiHook.Target_Lock.Prediction/(SkibidiHook.Target_Lock.AutoPrediction.Set_Based_Config.OriginalPing*2)))*10^SkibidiHook.Target_Lock.AutoPrediction.Set_Based_Config.Precision)/10^SkibidiHook.Target_Lock.AutoPrediction.Set_Based_Config.Precision;
+    elseif Serial.Target_Lock.AutoPrediction.Type == "Math" then
+        getgenv().PREDICTION = math.floor((0.1+(ping*Serial.Target_Lock.AutoPrediction.Math_Config.Numerator)) * 10^Serial.Target_Lock.AutoPrediction.Math_Config.Precision) / 10^Serial.Target_Lock.AutoPrediction.Math_Config.Precision;
+	elseif Serial.Target_Lock.AutoPrediction.Type == "Set Based" then
+	if Serial.Target_Lock.AutoPrediction.Set_Based_Config.Method == "A" then
+   getgenv().PREDICTION = math.floor((((Serial.Target_Lock.Prediction + (620 - (555+65)))*0.5) + (ping*Serial.Target_Lock.Prediction/(Serial.Target_Lock.AutoPrediction.Set_Based_Config.OriginalPing*2)))*10^setprecisiontthing)/10^setprecisiontthing;
+		elseif Serial.Target_Lock.AutoPrediction.Set_Based_Config.Method == "B" then
+      getgenv().PREDICTION = math.floor((((Serial.Target_Lock.Prediction + (620 - (555+65)))*-1) + (ping*Serial.Target_Lock.Prediction/(Serial.Target_Lock.AutoPrediction.Set_Based_Config.OriginalPing*2)))*10^Serial.Target_Lock.AutoPrediction.Set_Based_Config.Precision)/10^Serial.Target_Lock.AutoPrediction.Set_Based_Config.Precision;
         end
   end
 end
-if SkibidiHook.Target_Lock.AutoJumpOffset.Enabled then
+if Serial.Target_Lock.AutoJumpOffset.Enabled then
 getgenv().JUMPOFFSET = math.floor(((ping*0.0010001)) * 10^3) / 10^3
 --10001
 end
-if SkibidiHook.Target_Lock.AutoJumpPrediction.Enabled then
-  getgenv().JUMPPREDICTION = math.floor((0.1+(ping*SkibidiHook.Target_Lock.AutoJumpPrediction.Numerator)) * 10^SkibidiHook.Target_Lock.AutoJumpPrediction.Precision) / 10^SkibidiHook.Target_Lock.AutoJumpPrediction.Precision
+if Serial.Target_Lock.AutoJumpPrediction.Enabled then
+  getgenv().JUMPPREDICTION = math.floor((0.1+(ping*Serial.Target_Lock.AutoJumpPrediction.Numerator)) * 10^Serial.Target_Lock.AutoJumpPrediction.Precision) / 10^Serial.Target_Lock.AutoJumpPrediction.Precision
 end
-if SkibidiHook.Target_Lock.Resolver.Enabled and Plr ~= nil then
+if Serial.Target_Lock.Resolver.Enabled and Plr ~= nil then
 if ResolverMethodPlaceholder == "Delta Time" then
                 Plr.Character[getgenv().SelectedPart].AssemblyLinearVelocity = CaclulateDeltaAssemblyLinearVelocity(Plr.Character[getgenv().SelectedPart])
                 Plr.Character[getgenv().SelectedPart].AssemblyLinearVelocity = CaclulateDeltaAssemblyLinearVelocity(Plr.Character[getgenv().SelectedPart])
@@ -3312,13 +3312,13 @@ game.Players.PlayerAdded:Connect(setupHitMarker)
     mt.__namecall = newcclosure(function(...)
         local args = {...}
         local vap = {"UpdateMousePos", "GetMousePos", "MousePos", "MOUSE", "MousePosUpdate", "mouse", "Mouse"}
-        if enabled and getnamecallmethod() == "FireServer" and table.find(vap, args[2]) and SkibidiHook.Target_Lock.Enabled and Plr.Character ~= nil and SkibidiHook.Target_Lock.Method == "Namecall" then
+        if enabled and getnamecallmethod() == "FireServer" and table.find(vap, args[2]) and Serial.Target_Lock.Enabled and Plr.Character ~= nil and Serial.Target_Lock.Method == "Namecall" then
       if getgenv().Prediction == "Normal" then
-      if SkibidiHook.Target_Lock.Resolver.Enabled == false then
-            args[3] = Plr.Character[getgenv().SelectedPart].Position+SkibidiHook.Variables.Vect3(0,RealJumpOffset,0)+(SkibidiHook.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION,-2,10),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION))
-      elseif SkibidiHook.Target_Lock.Resolver.Enabled == true and SkibidiHook.Target_Lock.Resolver.Method == "MoveDirection" then
+      if Serial.Target_Lock.Resolver.Enabled == false then
+            args[3] = Plr.Character[getgenv().SelectedPart].Position+Serial.Variables.Vect3(0,RealJumpOffset,0)+(Serial.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION,-2,10),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION))
+      elseif Serial.Target_Lock.Resolver.Enabled == true and Serial.Target_Lock.Resolver.Method == "MoveDirection" then
      args[3] = Plr.Character[getgenv().SelectedPart].Position + (Plr.Character.Humanoid.MoveDirection * Plr.Character.Humanoid.WalkSpeed * getgenv().PREDICTION)
-      elseif SkibidiHook.Target_Lock.Resolver.Enabled == true and SkibidiHook.Target_Lock.Resolver.Method == "LookVector" then
+      elseif Serial.Target_Lock.Resolver.Enabled == true and Serial.Target_Lock.Resolver.Method == "LookVector" then
      args[3] = Plr.Character[getgenv().SelectedPart].Position + (Plr.Character[getgenv().SelectedPart].CFrame.LookVector * getgenv().PREDICTION*1.5)
      end
             else
@@ -3337,9 +3337,9 @@ game.Players.PlayerAdded:Connect(setupHitMarker)
 local Hooks = {}
 local Client = game:GetService("Players").LocalPlayer
 Hooks[1] = hookmetamethod(Client:GetMouse(), "__index", newcclosure(function(self, index)
-    if index == "Hit" and SkibidiHook.Target_Lock.Method == "Index" and enabled and Plr.Character ~= nil and SkibidiHook.Target_Lock.Enabled then
+    if index == "Hit" and Serial.Target_Lock.Method == "Index" and enabled and Plr.Character ~= nil and Serial.Target_Lock.Enabled then
         
-            local position = CFrame.new(Plr.Character[getgenv().SelectedPart].Position+SkibidiHook.Variables.Vect3(0,RealJumpOffset,0)+(SkibidiHook.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION,-2,10),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION)))
+            local position = CFrame.new(Plr.Character[getgenv().SelectedPart].Position+Serial.Variables.Vect3(0,RealJumpOffset,0)+(Serial.Variables.Vect3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION,math.clamp(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION,-2,10),Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION)))
             
             return position
     end
@@ -3387,8 +3387,8 @@ local last_render = 0
 local drawings = {
     crosshair = {},
     text = {
-        Drawing.new('Text', {Size = 13, Font = 2, Outline = true, Text = 'skibidi', Color = Color3.new(255, 255,255)}),
-        Drawing.new('Text', {Size = 13, Font = 2, Outline = true, Text = ".hook", Color = Color3.new(255, 130,9)}),
+        Drawing.new('Text', {Size = 13, Font = 2, Outline = true, Text = 'Serial', Color = Color3.new(255, 0,0)}),
+        Drawing.new('Text', {Size = 13, Font = 2, Outline = true, Text = ".xyz", Color = Color3.new(255, 130,9)}),
 	
     }
 }
@@ -3533,7 +3533,7 @@ Menu.Tab("Configuration")
 
 local function MenuNameUpdate()
         while (task.wait()) do
-            local Name, PlaceHolder = 'skibidi', ''
+            local Name, PlaceHolder = 'Serial', ''
             for i = 1, #Name do --try
                 local Character = string.sub(Name, i, i)
                 PlaceHolder = PlaceHolder .. Character
@@ -3547,7 +3547,7 @@ task.spawn(MenuNameUpdate)
 
 
 Menu.Watermark()
-Menu.Watermark:Update('Skibidi<font color="#' .. tostring(Menu.Accent:ToHex()) .. '">.hook</font>') -- please fix this and we can add a variable for a color.
+Menu.Watermark:Update('Serial<font color="#' .. tostring(Menu.Accent:ToHex()) .. '">.hook</font>') -- please fix this and we can add a variable for a color.
 
   --\\ Setting Stuff Function
   Menu.Watermark:SetVisible(true)
@@ -3566,11 +3566,11 @@ Menu.Container("Main", "Visuals", "Right")
 
 
 Menu.CheckBox("Main", "Killbot", "Enabled", false, function(x) 
-SkibidiHook.Target_Lock.Enabled = x
+Serial.Target_Lock.Enabled = x
 end)
 
 Menu.CheckBox("Main", "Killbot", "Camlock", false, function(x) 
-SkibidiHook.Camera_Lock.Enabled = x
+Serial.Camera_Lock.Enabled = x
 end)
 
 Menu.Button("Main", "Killbot", "Load Tool", function(x)
@@ -3593,7 +3593,7 @@ player.CharacterRemoving:Connect(function()
 Tool.Parent = game.Players.LocalPlayer.Backpack
 end)
 Tool.Activated:Connect(function()
-if SkibidiHook.Target_Lock.Enabled then
+if Serial.Target_Lock.Enabled then
             if enabled == true then
                 enabled = false
                 Plr = LockToPlayer()
@@ -3657,7 +3657,7 @@ TeextButton.BorderSizePixel = 0
 TeextButton.Position = UDim2.new(0.0792079195, 0, 0.18571429, 0)
 TeextButton.Size = UDim2.new(0, 80, 0, 44)
 TeextButton.Font = Enum.Font.SourceSansSemibold
-TeextButton.Text = "Enable SkibidiHook"
+TeextButton.Text = "Enable Button"
 TeextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 TeextButton.TextScaled = true
 TeextButton.TextSize = 14.000
@@ -3668,7 +3668,7 @@ UIICorner.Parent = Fraame
 
 local staate = true
 TeextButton.MouseButton1Click:Connect(function()
-if SkibidiHook.Target_Lock.Enabled then
+if Serial.Target_Lock.Enabled then
     if enabled == true then
           enabled = false
          Plr = GetClosestPlr()
@@ -3691,18 +3691,8 @@ local UIICorner2 = Instance.new("UICorner")
 UIICorner2.Parent = TeextButton
 end)
 
-
-
-Menu.CheckBox("Main", "Killbot", "WallCheck", false, function(x) 
-   SkibidiHoook.Target_Lock.WallCheck = x
-end)
-
 Menu.CheckBox("Main", "Killbot", "Highlight", false, function(x) 
-Menu.Notify("Already On Skibidi", 5)
-end)
-
-Menu.CheckBox("Main", "Killbot", "Auto Fire", false, function(x) 
-Menu.Notify("wip", 5)
+Menu.Notify("Already On", 5)
 end)
 
 
@@ -3739,7 +3729,7 @@ ResolverMethodPlaceholder = x
 end)
 
 Menu.ComboBox("Main", "Killbot", "Resolver Type", "LookVector", {"MoveDirection", "Delta Time", "LookVector"}, function(x)
-    SkibidiHook.Target_Lock.Resolver.Enabled = x                                                                                                           
+    Serial.Target_Lock.Resolver.Enabled = x                                                                                                           
 end)
 
 Menu.ComboBox("Main", "Configure", "Hit Part", "HumanoidRootPart", {"HumanoidRootPart", "Head", "UpperTorso", "LowerTorso"}, function(x)
@@ -3775,7 +3765,7 @@ player.CharacterRemoving:Connect(function()
 CamTool.Parent = game.Players.LocalPlayer.Backpack
 end)
 CamTool.Activated:Connect(function()
-if SkibidiHook.Camera_Lock.Enabled then
+if Serial.Camera_Lock.Enabled then
             if Cenabled == true then
                 Cenabled = false
                 PlrC = LockToPlayer()
@@ -3836,7 +3826,7 @@ TextButton.BorderSizePixel = 0
 TextButton.Position = UDim2.new(0.0792079195, 0, 0.18571429, 0)
 TextButton.Size = UDim2.new(0, 80, 0, 44)
 TextButton.Font = Enum.Font.SourceSansSemibold
-TextButton.Text = "Enable Skibidi.Hook"
+TextButton.Text = "Enable Button"
 TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 TextButton.TextScaled = true
 TextButton.TextSize = 14.000
@@ -3847,7 +3837,7 @@ UICorner.Parent = Frame
 
 local state = true
 TextButton.MouseButton1Click:Connect(function()
-if SkibidiHook.Camera_Lock.Enabled then
+if Serial.Camera_Lock.Enabled then
     if Cenabled == true then
           Cenabled = false
          PlrC = GetClosestPlr()
@@ -4015,18 +4005,18 @@ Menu.CheckBox("Main", "Cframe Desync", "Enabled", false, function(x)
 CFrameDesync.Enabled = x
 end)
 
-local skibidibuhhalls = {
+local serialbuhhalls = {
      viewtarg = true
 }
 
-if enabled and skibidibuhhalls.viewtarg then
+if enabled and serialbuhhalls.viewtarg then
         Workspace.CurrentCamera.CameraSubject = Plr.Character.HumanoidRootPart
 else
         Workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
 end
 
 Menu.CheckBox("Main", "Cframe Desync", "View Target", false, function(x) 
-   skibidibuhhalls.viewtarg = x
+   serialbuhhalls.viewtarg = x
 end)
 
 Menu.Slider("Main", "Cframe Desync", "X", 5, 100, 0, "", 1, function(slider)
@@ -4194,7 +4184,7 @@ Menu.ComboBox("Main", "Visuals", "Crosshair Mode", "center", {"center", "mouse"}
 end)
 
 Menu.CheckBox("Main", "Visuals", "Hit Detection", false, function(x) 
-   SkibidiHook.Hit_Detection.Enabled = x
+   Serial.Hit_Detection.Enabled = x
 end)
 
 local networkpos = false 
@@ -4215,15 +4205,15 @@ Menu.CheckBox("Main", "Visuals", "Network Position( Buggy A Little )", false, fu
 end)
 
 Menu.CheckBox("Main", "Visuals", "Hit Sound ( Buggy )", false, function(x) 
-   SkibidiHook.Hit_Detection.HitSound = x
+   Serial.Hit_Detection.HitSound = x
 end)
 
 Menu.ComboBox("Main", "Visuals", "Hit Sound", "Bubble", {"Bubble", "Rust", "Pop", "Tick"}, function(x)
-    SkibidiHook.Hit_Detection.Sound = x                                                                                                           
+    Serial.Hit_Detection.Sound = x                                                                                                           
 end)
 
 Menu.ColorPicker("Main", "Visuals", "HitMarker Color", Color3.fromRGB(143, 48, 167), 2, function(x)
-    SkibidiHook.Hit_Detection.Color = x
+    Serial.Hit_Detection.Color = x
 end, "Color Of HitMarker")
 
 
@@ -4255,7 +4245,7 @@ Menu.CheckBox("Main", "Visuals", "Environment", false, function(x)
 end)
 
 Menu.Hotkey("Configuration", "Config", "Menu Keybind", false, function(x) -- making a togglekey, again replace Main and Target Aimbot with your tab and section name.
-    Skibidi.MenuKeybind = x
+    Serial.MenuKeybind = x
 end)
 
 local SelfEspSettings = {
@@ -4370,10 +4360,10 @@ end)
 
  for i = 1, 3 do
     task.wait(0.5)
-    Menu.Notify("Skibidi.Hook Has Loaded Successfully", 5)
+    Menu.Notify("Script Has Loaded Successfully", 5)
 end
 
-getgenv().SkibidiSolutions = { 
+getgenv().SerialSolutions = { 
     ["Start Up"] = { 
         -- // We Getting BackDoored For A Circle Chain
         Loader = false, -- // Shows An Intro 
@@ -4454,7 +4444,7 @@ getgenv().SkibidiSolutions = {
         FOVCircle = hi, -- // Circle, Square, Triangle, Rectangle, Hexagon
         TargetPart = "HumanoidRootPart", -- // Not useful, it goes with the lock
         
-        ShowFieldOfView = false, -- // Nah Don't Show It Or Skibidi Touch
+        ShowFieldOfView = false, -- // Nah Don't Show It Or Fanum Tax
     },
      
     ["AutoPrediction"] = {
@@ -4469,17 +4459,6 @@ getgenv().SkibidiSolutions = {
         Ping_90 = 0.1, -- // Switches Prediction 90 For Your Ping Of YOUR Choice
         Ping_100 = 0.131, -- // Switches Prediction 100 For Your Ping Of YOUR Choice
     },
-
-["Animations"] = {
-    Enabled = false, -- // Use Animation Changer
-    Running = "http://www.roblox.com/asset/?id=616168032", -- // Changes Local Player Running Animation
-    
-    Walking = "http://www.roblox.com/asset/?id=616168032", -- // Changes Local Player Walking Animation
-    Jumping = "http://www.roblox.com/asset/?id=1083218792", -- // Changes Local Player Jumping Animation
-    
-    Falling = "http://www.roblox.com/asset/?id=707829716", -- // Changes Local Player Falling Animation
-    Idle = "http://www.roblox.com/asset/?id=616160636" -- // Changes Local Player Idle Animation
-},
 
     ["CameraNavigation"] = { 
         Enabled = true, -- // Global Switch
@@ -4545,67 +4524,3 @@ getgenv().SkibidiSolutions = {
         
         Maximum = 950, -- // Maximum Of Clearing Roblox Console
     },
-   
-    ["OtherGames"] = {
-        ["Anarchy"] = {
-            Enabled = false, -- // Global Switch
-            HitboxExpander = {
-                Enabled = false, -- // Use Hitbox Expander
-                Color = Color3.fromRGB(0, 0, 0), -- // Hitbox Expander Color Of Your Choice (R, G, B)
-                
-                Transparency = 0, -- // Hitbox Expander Transparency: 0 is lowest, 1 is highest
-                Size = {
-                    X = 5, -- // Hitbox Expander Size Horizontally
-                    Y = 5, -- // Hitbox Expander Size Vertically
-                    Z = 5, -- // Hitbox Expander Size Depth
-                }
-            }
-        },
-        
-        ["Arsenal"] = {
-            Enabled = false, -- // Use SilentAim/BulletRedirection In Arsenal
-            FOV = false, -- // Show Field Of View
-
-            Size = 60, -- // Size Of The Field Of View
-            Color = Color3.fromRGB(0, 0, 0), -- // Color Of Field Of View
-        },
-        
-        ["Basketball Stars"] = {
-            Enabled = false, -- // To Use Basketball Stars Support
-            ShotAccuracy = 100, -- // Accuracy Of Ball Flowing Through The Net
-
-            AutomaticallyGreens = false, -- // Turns Your Late Shots Into Accurate Shots
-        },
-    },
-    
-    ["TargetOutlierSquare"] = {
-        -- // Fiction Hitbox Just A Box
-        Enabled = false, -- // Use Fake Square Outlier Hitbox
-        Color = Color3.fromRGB(255, 255, 255), -- // Color Of Square Outlier
-        
-        Size = Vector3.new(5, 5, 5), -- // Size Of The Square Outlier
-        Material = Enum.Material.ForceField, -- // Material Of The Outlier 
-    },
-    
-    ["Textures"] = {
-        Enabled = false, -- // Global Switch
-        Material = Enum.Material.Pavement, -- // Map Texture You Wanna Use
-        
-        UseColor = false, -- // Changes Map Color With Texture
-        Color = Color3.fromRGB(0, 0, 0), -- // Color Of Your Choice
-    },
-
-    ["ExecutorCompatibility"] = { 
-        -- Compatibility matrix for various execution environments
-        Wave = false, -- // Recommended
-        Solara = false, -- // Decent
-
-        Synz = false, -- // Ass, Only Crashes
-        Fluxus = false, -- // Recommended (Android)
-
-        Delta = false, -- // Recommended (Android)
-        Cubix = false, -- // Recommended (iOS)
-
-        Verification = true -- // Wouldn't Use
-    }
-}
