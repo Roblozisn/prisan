@@ -2543,7 +2543,7 @@ end
     Menu.Watermark:SetVisible(true)
     Menu:SetTab("Main")
     Menu:SetVisible(true)
-    Menu:SetSize(450, 380)
+    Menu:SetSize(450, 450)
     Menu:Init()
     UserInputService.InputBegan:Connect(KeybindHandler)
     RunService.Heartbeat:Connect(Heartbeat)
