@@ -2540,10 +2540,10 @@ end
   
   --\\ Initialize Function
   local function Initialize()
+    Menu:SetSize(650, 750)
     Menu.Watermark:SetVisible(true)
     Menu:SetTab("Main")
     Menu:SetVisible(true)
-    Menu:SetSize(650, 750)
     Menu:Init()
     UserInputService.InputBegan:Connect(KeybindHandler)
     RunService.Heartbeat:Connect(Heartbeat)
