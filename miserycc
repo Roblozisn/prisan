@@ -630,7 +630,7 @@ end
   
   
   --\\ Ui
-  local Menu = loadstring(req({Url = "https://pastebin.com/raw/YYASiHhN", Method = "Get"}).Body)(); -- WYVJcRAt
+  local Menu = loadstring(req({Url = "https://pastebin.com/raw/55iKqxgB", Method = "Get"}).Body)(); -- WYVJcRAt
 
     local function MenuNameUpdate()
         while (task.wait()) do
@@ -2638,3 +2638,6 @@ end
 Players.PlayerAdded:Connect(function(v)
     local player = getgenv().esp.NewPlayer(v)
 end)
+
+
+Menu:SetSize(450,380)
