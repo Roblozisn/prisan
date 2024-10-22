@@ -1,3 +1,623 @@
+-- //Lock important\\
+local V3 = Vector3.new
+local V2 = Vector2.new
+local inf = math.huge
+
+getgenv().Settings = {
+    ["WhyIsSheLookingAtMe"] = {
+        ["Enabled"] = false,
+        ["AimPart"] = "LowerTorso",
+        ["AutoAir"] = true,
+        ["Prediction"] = {
+            ["Horizontal"] = 0.135,
+            ["Vertical"] = 0.1,
+        },
+        ["CamPrediction"] = {
+            ["Horizontal"] = 0.135,
+            ["Vertical"] = 0.1,
+        },
+        ["NOTIF"] = true,
+        ["AUTOPRED"] = false,
+        ["AdvancedAutoPred"] = false,
+        ["FOV"] = inf,
+        ["RESOLVER"] = false,
+        ["LOCKTYPE"] = "Namecall",
+        ["TargetStats"] = false,
+        ["Resolver"] = {
+            ["Enabled"] = false,
+            ["Type"] = "None",
+        },
+        ["Camera"] = {
+            ["Enabled"] = false,
+            ["HoodCustomsBypass"] = false,
+        },
+        ["OnHit"] = {
+            ["Enabled"] = false,
+            ["Hitchams"] = {
+                ["Enabled"] = false,
+                ["Color"] = Color3.fromRGB(0, 0, 0),
+                ["Transparency"] = 0,
+                ["Material"] = "Glass",
+            },
+            ["Hitsound"] = {
+                ["Enabled"] = false,
+                ["Sound"] = "hitsounds/sparkle.wav",
+                ["Volume"] = 2,
+            },
+        },
+    },
+}
+
+getgenv().DistancesMid = 50
+getgenv().DistancesClose = 10
+getgenv().AimSpeed = 1
+getgenv().CAMPREDICTION = 0.135
+getgenv().CAMJUMPPREDICTION = 0.1
+getgenv().HorizontalSmoothness = 1
+getgenv().VerticalSmoothness = 0.5
+getgenv().ShakeX = 0
+getgenv().ShakeY = 0
+getgenv().ShakeZ = 0
+getgenv().PREDICTION = 0.135
+getgenv().JUMPPREDICTION = 0.1
+getgenv().SelectedPart = "HumanoidRootPart" -- Adjust as needed
+getgenv().Prediction = "Normal"
+getgenv().AutoPredType = "Normal"
+getgenv().Resolver = false
+
+local Ranges = {
+    Close = 30,
+    Mid = 100,
+}
+
+local NotificationHolder = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Module.Lua"))()
+local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Client.Lua"))()
+
+function SendNotification(text)
+    Notification:Notify(
+        {Title = "Craxes.lol", Description = "Craxes.lol: " .. text},
+        {OutlineColor = Color3.fromRGB(0, 0, 0), Time = 3, Type = "image"},
+        {Image = "http://www.roblox.com/asset/?id=6023426923", ImageColor = Color3.fromRGB(0, 0, 0)}
+    )
+end
+
+function calculateVelocity(initialPos, finalPos, timeInterval)
+    local displacement = finalPos - initialPos
+    local velocity = displacement / timeInterval
+    return velocity
+end
+
+-- Initialization
+local lplr = game.Players.LocalPlayer
+local AnchorCount = 0
+local MaxAnchor = 999
+local CC = game:GetService("Workspace").CurrentCamera
+local Plr
+local enabled = false
+local mouse = lplr:GetMouse()
+local placemarker = Instance.new("Part", game.Workspace)
+
+function makemarker(Parent, Adornee, Color, Size, Size2)
+    local e = Instance.new("BillboardGui", Parent)
+    e.Name = "PP"
+    e.Adornee = Adornee
+    e.Size = UDim2.new(Size, Size2, Size, Size2)
+    e.AlwaysOnTop = getgenv().Settings.WhyIsSheLookingAtMe.DOT
+    local a = Instance.new("Frame", e)
+    a.Size = getgenv().Settings.WhyIsSheLookingAtMe.DOT and UDim2.new(1, 0, 1, 0) or UDim2.new(0, 0, 0, 0)
+    a.Transparency = getgenv().Settings.WhyIsSheLookingAtMe.DOT and 0 or 1
+    a.BackgroundTransparency = getgenv().Settings.WhyIsSheLookingAtMe.DOT and 0 or 1
+    a.BackgroundColor3 = Color
+    local g = Instance.new("UICorner", a)
+    g.CornerRadius = UDim.new(1, 1)
+    return e
+end
+
+function noob(player)
+    local character
+    repeat
+        wait()
+    until player.Character
+    local handler = makemarker(placemarker, player.Character:WaitForChild(getgenv().SelectedPart), Color3.fromRGB(107, 184, 255), 0.3, 3)
+    handler.Name = player.Name
+    player.CharacterAdded:Connect(function(Char)
+        handler.Adornee = Char:WaitForChild(getgenv().SelectedPart)
+    end)
+end
+
+local data = game.Players:GetPlayers()
+for i = 1, #data do
+    if data[i] ~= lplr then
+        noob(data[i])
+    end
+end
+
+game.Players.PlayerAdded:Connect(function(Player)
+    noob(Player)
+end)
+
+spawn(function()
+    placemarker.Anchored = true
+    placemarker.CanCollide = false
+    placemarker.Size = V3(0, 0, 0)
+    placemarker.Transparency = 0.75
+    if getgenv().Settings.WhyIsSheLookingAtMe.DOT then
+        makemarker(placemarker, placemarker, Color3.fromRGB(100, 81, 195), 1, 0)
+    end
+end)
+
+local Tool = Instance.new("Tool")
+Tool.RequiresHandle = false
+Tool.Name = "Lock Tool"
+Tool.Parent = lplr.Backpack
+
+local function onCharacterAdded(character)
+    Tool.Parent = lplr.Backpack
+end
+
+lplr.CharacterAdded:Connect(onCharacterAdded)
+
+lplr.CharacterRemoving:Connect(function()
+    Tool.Parent = lplr.Backpack
+end)
+
+function hitsound()
+    local Hit = Instance.new("Sound")
+    Hit.Parent = game.SoundService
+    Hit.SoundId = getcustomasset(getgenv().Settings.WhyIsSheLookingAtMe.OnHit.Hitsound.Sound)
+    Hit.Volume = getgenv().Settings.WhyIsSheLookingAtMe.OnHit.Hitsound.Volume
+    Hit.Looped = false
+    Hit:Play()
+    Hit.Ended:Connect(function()
+        Hit:Destroy()
+    end)
+end
+
+Tool.Activated:Connect(function()
+    if getgenv().Settings.WhyIsSheLookingAtMe.Enabled or getgenv().Settings.WhyIsSheLookingAtMe.Camera.Enabled then
+        if enabled then
+            enabled = false
+            Plr = LockToPlayer()
+            if getgenv().Settings.WhyIsSheLookingAtMe.NOTIF then 
+                SendNotification("Unlocked")
+            end
+        else
+            Plr = LockToPlayer()
+            local TargetPlayer = tostring(Plr)
+            enabled = true
+
+            local oldHealth = Plr.Character.Humanoid.Health
+            if getgenv().Settings.WhyIsSheLookingAtMe.OnHit.Hitsound.Enabled and Plr then
+                Plr.Character.Humanoid.HealthChanged:Connect(function(newHealth)
+                    if newHealth < oldHealth then
+                        hitsound()
+                    end
+                    oldHealth = newHealth
+                end)
+            end
+
+            if getgenv().Settings.WhyIsSheLookingAtMe.OnHit.Hitchams.Enabled then
+                Plr.Character.Humanoid.HealthChanged:Connect(function(newHealth)
+                    local Clone = Plr.Character:Clone()
+                    if newHealth < oldHealth then
+                        Clone.Parent = game.Workspace
+                        Plr.Character.Archivable = true
+
+                        for _, Obj in next, Clone:GetDescendants() do
+                            if Obj.Name == "HumanoidRootPart" or Obj:IsA("Humanoid") or Obj:IsA("LocalScript") or Obj:IsA("Script") or Obj:IsA("Decal") then
+                                Obj:Destroy()
+                            elseif Obj:IsA("BasePart") or Obj:IsA("MeshPart") or Obj:IsA("Part") then
+                                if Obj.Transparency > 1 then
+                                    Obj:Destroy()
+                                else
+                                    Obj.CanCollide = false
+                                    Obj.Anchored = true
+                                    Obj.Material = getgenv().Settings.WhyIsSheLookingAtMe.OnHit.Hitchams.Material
+                                    Obj.Color = getgenv().Settings.WhyIsSheLookingAtMe.OnHit.Hitchams.Color
+                                    Obj.Transparency = getgenv().Settings.WhyIsSheLookingAtMe.OnHit.Hitchams.Transparency
+                                    Obj.Size = Obj.Size + V3(0.05, 0.05, 0.05)
+                                end
+                            end
+                        end
+                        Clone.Parent = game.Workspace
+                        local start = tick()
+                        local connection
+                        connection = game:GetService("RunService").Heartbeat:Connect(function()
+                            if tick() - start >= 3 then
+                                connection:Disconnect()
+                                Clone:Destroy()
+                            end
+                        end)
+                    end
+                end)
+            end
+
+            if getgenv().Settings.WhyIsSheLookingAtMe.NOTIF == true then
+                SendNotification("CumsSlut: " .. Plr.Character.Humanoid.DisplayName)
+            end
+        end
+    else
+        SendNotification("Enable Targetlock")
+    end
+end)
+ 
+function LockToPlayer()
+    local closestPlayer
+    local shortestDistance = getgenv().Settings.WhyIsSheLookingAtMe.FOV
+    for i, v in pairs(game.Players:GetPlayers()) do
+        if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild("HumanoidRootPart") then
+            local pos = CC:WorldToViewportPoint(v.Character.PrimaryPart.Position)
+            local magnitude = (V2(pos.X, pos.Y) - V2(mouse.X, mouse.Y)).magnitude
+            if magnitude < shortestDistance then
+                closestPlayer = v
+                shortestDistance = magnitude
+            end
+        end
+    end
+    return closestPlayer
+end
+ 
+local Stats = game:GetService("Stats")
+local function Predict(Velocity)
+    return V3(Velocity.X, math.clamp(Velocity.Y, -5, 10), Velocity.Z)
+end
+local function GetLockPrediction(Part)
+    return Part.CFrame + (Predict(Part.Velocity) * getgenv().PREDICTION)
+end
+local function GetCamPrediction(Part)
+    return Part.CFrame + Predict(Part.Velocity) * (getgenv().CAMPREDICTION)
+end
+getgenv().UnlockOnDeath = false
+local pingvalue = nil
+local split = nil
+local ping = nil
+local LocalHL = Instance.new("Highlight") 
+game:GetService("RunService").Stepped:Connect(function()
+    if getgenv().UnlockOnDeath == true and Plr and Plr.Character:FindFirstChild("Humanoid") then
+        if Plr.StarterPlayer.StarterCharacterScripts.BodyEffects['K.O'] then
+            AimlockTarget = nil
+        end
+    end
+        if enabled and getgenv(). Settings.WhyIsSheLookingAtMe.Enabled and Plr.Character ~= nil and Plr.Character:FindFirstChild("HumanoidRootPart") or enabled and getgenv(). Settings.WhyIsSheLookingAtMe.Camera.Enabled and Plr.Character ~= nil and Plr.Character:FindFirstChild("HumanoidRootPart") then
+if getgenv().Prediction == "Normal" then
+            placemarker.CFrame = CFrame.new(GetLockPrediction(Plr.Character[getgenv().SelectedPart]).Position)         
+elseif getgenv().Prediction == "Yun" then
+            placemarker.CFrame = CFrame.new(Plr.Character[getgenv().SelectedPart].Position+V3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION/10,Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION/10,Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION/10))
+end
+LocalHL.Parent = Plr.Character
+LocalHL.FillTransparency = 0
+LocalHL.FillColor = Color3.fromRGB(255,0,0)
+LocalHL.OutlineColor = Color3.fromRGB(255,0,0)
+        else
+            placemarker.CFrame = CFrame.new(0, 9999, 0)
+          LocalHL.Parent = nil
+        end
+pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+split = string.split(pingvalue,'(')
+ping = tonumber(split[1])
+
+if getgenv().Settings.WhyIsSheLookingAtMe.AdvancedAutoPred == true and enabled then
+    getgenv().CAMJUMPPREDICTION = 0.05
+    if ping > 300 then
+        getgenv().CAMPREDICTION = 0.434
+    elseif ping > 290 then
+        getgenv().CAMPREDICTION = 0.422
+    elseif ping > 280 then
+        getgenv().CAMPREDICTION = 0.44
+    elseif ping > 270 then
+        getgenv().CAMPREDICTION = 0.4385
+    elseif ping > 260 then
+        getgenv().CAMPREDICTION = 0.4158
+    elseif ping > 250 then
+        getgenv().CAMPREDICTION = 0.3148
+    elseif ping > 240 then
+        getgenv().CAMPREDICTION = 0.34
+    elseif ping > 230 then
+        getgenv().CAMPREDICTION = 0.33
+    elseif ping > 220 then
+        getgenv().CAMPREDICTION = 0.30
+    elseif ping > 210 then
+        getgenv().CAMPREDICTION = 0.295
+    elseif ping > 200 then
+        getgenv().CAMPREDICTION = 0.2915
+    elseif ping > 190 then
+        getgenv().CAMPREDICTION = 0.2911
+    elseif ping > 180 then
+        getgenv().CAMPREDICTION = 0.28291198328
+    elseif ping > 180 then
+        getgenv().CAMPREDICTION = 0.25291198328
+    elseif ping > 170 then
+        getgenv().CAMPREDICTION = 0.28
+    elseif ping > 160 then
+        getgenv().CAMPREDICTION = 0.2754
+    elseif ping  >150 then
+        getgenv().CAMPREDICTION = 0.271
+    elseif ping  >140 then
+        getgenv().CAMPREDICTION = 0.25
+       elseif ping > 130 then
+        getgenv().CAMPREDICTION = 0.12057
+    elseif ping > 120 then
+        getgenv().CAMPREDICTION = 0.1966
+    elseif ping > 110 then
+        getgenv().CAMPREDICTION = 0.18642271
+    elseif ping > 100 then
+        getgenv().CAMPREDICTION = 0.18533
+    elseif ping > 90 then
+        getgenv().CAMPREDICTION = 0.1749573
+    elseif ping > 80 then
+        getgenv().CAMPREDICTION = 0.1745
+    elseif ping > 70 then
+        getgenv().CAMPREDICTION = 0.1642
+    elseif ping > 50 then
+        getgenv().CAMPREDICTION = 0.14267
+    elseif ping > 40 then
+        getgenv().CAMPREDICTION = 0.142
+    elseif ping > 30 then
+        getgenv().CAMPREDICTION = 0.1312
+   elseif ping > 20 then
+        getgenv().CAMPREDICTION = 0.1312
+   elseif ping > 10 then
+        getgenv().CAMPREDICTION = 0.1287
+   end
+end
+if getgenv().Settings.WhyIsSheLookingAtMe.AUTOPRED == true then
+    if getgenv().AutoPredType == "Normal" then
+if ping <200 then
+    getgenv().PREDICTION = 0.2198343243234332
+    elseif ping < 170 then
+        getgenv().PREDICTION = 0.2165713
+    elseif ping < 160 then
+        getgenv().PREDICTION = 0.18242
+    elseif ping < 150 then
+        getgenv().PREDICTION = 0.1758041
+    elseif ping < 140 then
+        getgenv().PREDICTION = 0.175626432
+    elseif ping < 130 then
+        getgenv().PREDICTION = 0.1743
+    elseif ping < 120 then
+        getgenv().PREDICTION = 0.173
+    elseif ping < 110 then
+        getgenv().PREDICTION = 0.1685025
+    elseif ping < 100 then
+            getgenv().PREDICTION = 0.163
+        elseif ping < 90 then
+            getgenv().PREDICTION = 0.1610
+        elseif ping < 80 then
+            getgenv().PREDICTION = 0.1439340
+        elseif ping < 70 then
+              getgenv().PREDICTION = 0.13868
+              elseif ping < 65 then
+              getgenv().PREDICTION = 0.1264236
+        elseif ping < 50 then
+              getgenv().PREDICTION = 0.13544
+        elseif ping < 30 then
+     getgenv().PREDICTION = 0.11252476
+        end
+    elseif getgenv().AutoPredType == "Math" then       
+ if not Plr or Plr == nil then
+      return
+   end
+        local Distance = (game.Players.LocalPlayer.Character.PrimaryPart.Position - Plr.Character.PrimaryPart.Position).Magnitude
+        if Distance <= Ranges.Mid then
+                getgenv().PREDICTION = 0.1 + (ping * 0.0005675)
+        elseif Distance <= Ranges.Close then
+                getgenv().PREDICTION = 0.1 + (ping * 0.0007675)
+        else
+        getgenv().PREDICTION = 0.1 + (ping * 0.0003975)
+        end
+  end
+end
+
+-- AutoAir logic
+if getgenv().Settings.WhyIsSheLookingAtMe.AutoAir then
+    if Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+        local humanoid = Plr.Character:FindFirstChild("Humanoid")
+        if humanoid then  -- Check if humanoid exists
+            local state = humanoid:GetState()
+            local playerCharacter = lplr.Character
+            local tool = playerCharacter and playerCharacter:FindFirstChildOfClass("Tool")
+
+            -- Check for jumping or freefall state
+            if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall then
+                -- Ensure the tool is not nil and has the correct name before activating
+                if tool and tool.Name ~= "Lock Tool" then
+                    tool:Activate()
+                end
+            end
+        end
+    end
+end
+
+if getgenv().Settings.WhyIsSheLookingAtMe.AimPart == "RightFoot" then
+else
+    Plr.Character:WaitForChild("Humanoid").StateChanged:Connect(function(old, new)
+        if new == Enum.HumanoidStateType.Freefall then
+            getgenv().Settings.WhyIsSheLookingAtMe.AimPart = "RightFoot"
+        else
+            getgenv().Settings.WhyIsSheLookingAtMe.AimPart = "LowerTorso"
+        end
+    end)
+end
+
+if getgenv().Settings.WhyIsSheLookingAtMe.Resolver.Enabled then
+if getgenv().Settings.WhyIsSheLookingAtMe.Resolver.Type == "Delta Time" then
+print("wsg")
+end
+if getgenv().Settings.WhyIsSheLookingAtMe.Resolver.Type == "Recalculator" then
+print("wsg")
+end
+if getgenv().Settings.WhyIsSheLookingAtMe.Resolver.Type == "No Y Velocity" then
+print("wsg")
+end
+end
+    end)
+
+
+game:GetService"RunService".Stepped:connect(function()
+    if enabled and getgenv().Settings.WhyIsSheLookingAtMe.Camera.Enabled then
+        if Plr ~= nil then
+            local shakeOffset = V3(
+                math.random(-getgenv().ShakeX, getgenv().ShakeX),
+                math.random(-getgenv().ShakeY, getgenv().ShakeY),
+                0
+            ) * 0.1
+local HorizontalLookPosition = CFrame.new(CC.CFrame.p, GetCamPrediction(Plr.Character[getgenv().SelectedPart]).Position+shakeOffset)
+      CC.CFrame = CC.CFrame:Lerp(HorizontalLookPosition, getgenv().HorizontalSmoothness)
+    end
+end
+end)
+    local mt = getrawmetatable(game)
+    local old = mt.__namecall
+    setreadonly(mt, false)
+    mt.__namecall = newcclosure(function(...)
+        local args = {...}
+        local vap = {"UpdateMousePos", "GetMousePos", "MousePos", "MOUSE", "MousePosUpdate"}
+        if enabled and getnamecallmethod() == "FireServer" and table.find(vap, args[2]) and getgenv().Settings.WhyIsSheLookingAtMe.Enabled and Plr.Character ~= nil and getgenv().Settings.WhyIsSheLookingAtMe.LOCKTYPE == "Namecall" then
+            if getgenv().Prediction == "Normal" then
+            args[3] = Plr.Character[getgenv().SelectedPart].Position+(V3(Plr.Character.HumanoidRootPart.Velocity.X,math.clamp(Plr.Character.HumanoidRootPart.Velocity.Y,-1,9),Plr.Character.HumanoidRootPart.Velocity.Z)*getgenv().PREDICTION)
+            elseif getgenv().Prediction == "Yun" then
+            args[3] = Plr.Character[getgenv().SelectedPart].Position+V3(Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.X*getgenv().PREDICTION/10,Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Y*getgenv().JUMPPREDICTION/10,Plr.Character.HumanoidRootPart.AssemblyLinearVelocity.Z*getgenv().PREDICTION/10)
+            else
+ 
+            args[3] = Plr.Character[SelectedPart].Position
+ 
+            end
+ 
+            return old(unpack(args))
+        end
+        return old(...)
+    end)
+
+local Hooks = {}
+local Client = game.Players.LocalPlayer
+
+Hooks[1] = hookmetamethod(Client:GetMouse(), "__index", newcclosure(function(self, index)
+    if index == "Hit" and getgenv().Settings.WhyIsSheLookingAtMe.LOCKTYPE == "Index" and enabled and Plr.Character ~= nil and getgenv().Settings.WhyIsSheLookingAtMe.Enabled then
+            local position = CFrame.new(Plr.Character[getgenv().SelectedPart].Position+(V3(Plr.Character.HumanoidRootPart.Velocity.X,math.clamp(Plr.Character.HumanoidRootPart.Velocity.Y,-1,9),Plr.Character.HumanoidRootPart.Velocity.Z)*getgenv().PREDICTION))
+            return position
+        
+    end
+    return Hooks[1](self, index)
+end))
+getgenv().CFrameDesync = {
+           Enabled = false,
+           AnglesEnabled = true,
+           Type = "Target Strafe",
+           Visualize = false,
+           VisualizeColor = Color3.fromRGB(255,0,0),
+           Random = {
+               X = 15,
+               Y = 9,
+               Z = 13,
+               AnglesX = 9,
+               AnglesY = 2,
+               AnglesZ = 3,
+               },
+           Custom = {
+               X = 1,
+               Y = 7,
+               Z = 3,
+               AnglesX = 7,
+               AnglesY = 9,
+               AnglesZ = 5,
+               },
+           TargetStrafe = {
+               Speed = 25,
+               Height = 1,
+               Distance = 7,
+               },
+}
+local straight = {
+         Visuals = {},
+         Desync = {},
+         Hooks = {},
+         Connections = {}
+}
+local RunService = game:GetService("RunService")
+
+task.spawn(function()
+straight.Visuals["R6Dummy"] = game:GetObjects("rbxassetid://9474737816")[1]; straight.Visuals["R6Dummy"].Head.Face:Destroy(); for i, v in pairs(straight.Visuals["R6Dummy"]:GetChildren()) do v.Transparency = v.Name == "HumanoidRootPart" and 1 or 0.70; v.Material = "Neon"; v.Color = Color3.fromRGB(100,81,195); v.CanCollide = false; v.Anchored = false end
+end)
+
+local Utility = {}
+
+    function Utility:Connection(connectionType, connectionCallback)
+        local connection = connectionType:Connect(connectionCallback)
+        straight.Connections[#straight.Connections + 1] = connection
+        return connection
+    end
+
+function Utility:Connection(connectionType, connectionCallback)
+        local connection = connectionType:Connect(connectionCallback)
+        straight.Connections[#straight.Connections + 1] = connection
+        return connection
+    end
+
+Utility:Connection(RunService.PostSimulation, function()
+if getgenv().CFrameDesync.AnglesEnabled or getgenv().CFrameDesync.Enabled then
+        straight.Desync[1] = lplr.Character.HumanoidRootPart.CFrame
+        local cframe = lplr.Character.HumanoidRootPart.CFrame
+        if getgenv().CFrameDesync.Enabled then
+            if getgenv().CFrameDesync.Type == "Random" then
+                cframe = cframe * CFrame.new(math.random(-getgenv().CFrameDesync.Random.X, getgenv().CFrameDesync.Random.X), math.random(-getgenv().CFrameDesync.Random.Y, getgenv().CFrameDesync.Random.Y), math.random(-getgenv().CFrameDesync.Random.Z, getgenv().CFrameDesync.Random.Z))
+            elseif getgenv().CFrameDesync.Type == "Custom" then
+                cframe = cframe * CFrame.new(getgenv().CFrameDesync.Custom.X, getgenv().CFrameDesync.Custom.Y, getgenv().CFrameDesync.Custom.Z)
+            elseif getgenv().CFrameDesync.Type == "Mouse" then
+                cframe = CFrame.new(lplr:GetMouse().Hit.Position)
+            elseif getgenv().CFrameDesync.Type == "Target Strafe" then
+            if enabled and Plr ~= nil then
+                local currentTime = tick() 
+                cframe = CFrame.new(Plr.Character[getgenv().SelectedPart].Position) * CFrame.Angles(0, 2 * math.pi * currentTime * getgenv().CFrameDesync.TargetStrafe.Speed % (2 * math.pi), 0) * CFrame.new(0, getgenv().CFrameDesync.TargetStrafe.Height, getgenv().CFrameDesync.TargetStrafe.Distance)
+            elseif getgenv().CFrameDesync.Type == "Local Strafe" then
+                local currentTime = tick() 
+                cframe = CFrame.new(lplr.Character.HumanoidRootPart.Position) * CFrame.Angles(0, 2 * math.pi * currentTime * getgenv().CFrameDesync.TargetStrafe.Speed % (2 * math.pi), 0) * CFrame.new(0, getgenv().CFrameDesync.TargetStrafe.Height, getgenv().CFrameDesync.TargetStrafe.Distance)
+                end
+      end
+
+        if getgenv().CFrameDesync.Visualize then
+            straight.Visuals["R6Dummy"].Parent = workspace
+            straight.Visuals["R6Dummy"].HumanoidRootPart.Velocity = Vector3.new()
+            straight.Visuals["R6Dummy"]:SetPrimaryPartCFrame(cframe)
+            for i, v in pairs(straight.Visuals["R6Dummy"]:GetChildren()) do v.Transparency = v.Name == "HumanoidRootPart" and 1 or 0.70; v.Material = "Neon"; v.Color = getgenv().CFrameDesync.VisualizeColor; v.CanCollide = false; v.Anchored = false end
+        else
+            straight.Visuals["R6Dummy"].Parent = nil
+        end
+
+        if getgenv().CFrameDesync.AnglesEnabled then
+            if getgenv().CFrameDesync.Type == "Random" then
+                cframe = cframe * CFrame.Angles(math.rad(math.random(getgenv().CFrameDesync.Random.AnglesX)), math.rad(math.random(getgenv().CFrameDesync.Random.AnglesY)), math.rad(math.random(getgenv().CFrameDesync.Random.AnglesZ)))
+            elseif getgenv().CFrameDesync.Type == "Custom" then
+                cframe = cframe * CFrame.Angles(math.rad(getgenv().CFrameDesync.Custom.AnglesX), math.rad(getgenv().CFrameDesync.Custom.AnglesY), math.rad(getgenv().CFrameDesync.Custom.AnglesZ))
+            end
+        end
+        lplr.Character.HumanoidRootPart.CFrame = cframe
+        RunService.RenderStepped:Wait()
+        lplr.Character.HumanoidRootPart.CFrame = straight.Desync[1]
+    else
+        if straight.Visuals["R6Dummy"].Parent ~= nil then
+            straight.Visuals["R6Dummy"].Parent = nil
+        end
+    end
+end
+end)
+
+--// Hooks
+local MainHookingFunctionsTick = tick()
+--
+straight.Hooks[1] = hookmetamethod(game, "__index", newcclosure(function(self, key)
+    if not checkcaller() then
+        if key == "CFrame" and straight.Desync[1] and (getgenv().CFrameDesync.AnglesEnabled or getgenv().CFrameDesync.Enabled) and lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart") and lplr.Character:FindFirstChild("Humanoid") and lplr.Character:FindFirstChild("Humanoid").Health > 0 then
+            if self == lplr.Character.HumanoidRootPart then
+                return straight.Desync[1] or CFrame.new()
+            elseif self == lplr.Character.Head then
+                return straight.Desync[1] and straight.Desync[1] + Vector3.new(0, lplr.Character.HumanoidRootPart.Size / 2 + 0.5, 0) or CFrame.new()
+            end
+        end
+    end
+    return straight.Hooks[1](self, key)
+end))
+
+--//LOAD MAIN GUI 
 -- // make multiselect in order
 -- // add border pixel math to dragging
 -- // containers canvasscroll update on setvisible
@@ -15,8 +635,8 @@ local Settings = {
     
     ItemColor = Color3.fromRGB(30, 30, 30),
     BorderColor = Color3.fromRGB(45, 45, 45),
-    MinSize = Vector2.new(500, 400),
-    MaxSize = Vector2.new(500, 400)
+    MinSize = Vector2.new(480, 350),
+    MaxSize = Vector2.new(480, 350)
 }
 
 
@@ -241,8 +861,8 @@ Menu_Frame.Name = "Menu"
 Menu_Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 Menu_Frame.BorderColor3 = Color3.fromRGB(40, 40, 40)
 Menu_Frame.BorderMode = Enum.BorderMode.Inset
-Menu_Frame.Position = UDim2.new(0.5, -250, 0.5, -275)
-Menu_Frame.Size = UDim2.new(0, 450, 0, 380)
+Menu_Frame.Position = UDim2.new(0.5, -250, 0.5, -200)
+Menu_Frame.Size = UDim2.new(0, 500, 0, 380)
 Menu_Frame.Visible = false
 Menu_Frame.Parent = Menu.Screen
 CreateStroke(Menu_Frame, Color3.new(), 2)
@@ -743,7 +1363,7 @@ function Menu.BodyPart(Tab_Name: string, Container_Name: string, Side: string, C
     Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     Frame.BorderColor3 = Color3.new()
     Frame.BorderMode = Enum.BorderMode.Inset
-    Frame.Size = UDim2.new(0, 200, 0, 190)
+    Frame.Size = UDim2.new(0, 190, 0, 180)
     Frame.Parent = Tab.self[Side]
 
     BodyPart:UpdateSize(25)
@@ -2723,7 +3343,6 @@ function Menu.Keybinds(): Keybinds
         end
         UpdateFrameSize()
     end
-
     function Keybinds:SetVisible(Visible: boolean)
         self.self.Visible = Visible
     end
@@ -3004,6 +3623,8 @@ local Frame = Instance.new("Frame")
 local TextButton = Instance.new("TextButton")
 local UITextSizeConstraint = Instance.new("UITextSizeConstraint")
 
+--Properties:
+
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -3018,11 +3639,11 @@ TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 TextButton.BackgroundTransparency = 1.000
 TextButton.Size = UDim2.new(1, 0, 1, 0)
 TextButton.Font = Enum.Font.SourceSans
-TextButton.Text = ">_<"
+TextButton.Text = "#1 CRAXES"
 TextButton.TextColor3 = Color3.fromRGB(0, 0, 0) 
 TextButton.TextScaled = true
 TextButton.TextSize = 30
-TextButton.TextStrokeColor3 = Color3.fromHex("#8F30A7")
+TextButton.TextStrokeColor3 = Color3.fromHex("#FF0000")
 TextButton.TextStrokeTransparency = 0.000
 TextButton.TextWrapped = true
     
@@ -3036,18 +3657,20 @@ UITextSizeConstraint.MaxTextSize = 30
 
 local player = game.Players.LocalPlayer
 
-
+-- Function to show the GUI when the character respawns
 local function onCharacterAdded(character)
     ScreenGui.Parent = player.PlayerGui
 end
 
-
+-- Function to connect character respawn event
 local function connectCharacterAdded()
     player.CharacterAdded:Connect(onCharacterAdded)
 end
 
+-- Connect the CharacterAdded event
 connectCharacterAdded()
 
+-- Keep the GUI visible when the character dies
 player.CharacterRemoving:Connect(function()
     ScreenGui.Parent = nil
 end) 
@@ -3055,1525 +3678,181 @@ end)
 --[[
 
 
-@jamkles body part endless ui mobile example, if any bugs contact 
+@kuohaha body part endless ui mobile example, if any bugs contact 
 me
 
 ]]
+local function MenuNameUpdate()
+    while (task.wait()) do
+        local Name = 'Craxes'  -- Name to animate
+        local animatedText = '.lua'  -- Text to animate in red
+        local PlaceHolder = ''
 
+        -- Animate the name 'craxes'
+        for i = 1, #Name do
+            local Character = string.sub(Name, i, i)
+            PlaceHolder = PlaceHolder .. Character
+            Menu:SetTitle(PlaceHolder .. '<font color="#FF0000">' .. animatedText .. '</font>')  -- Set .lol color to red
+            task.wait(0.25)  -- Adjust the speed of animation here
+        end
 
-Menu:SetSize(500, 400)
+        -- Animate the '.lol' part character by character
+        for j = 1, #animatedText do
+            local Character = string.sub(animatedText, j, j)
+            Menu:SetTitle(PlaceHolder .. '<font color="#FF0000">' .. string.sub(animatedText, 1, j) .. '</font>')  -- Keep .Reborn color red
+            task.wait(0.25)  -- Adjust the speed of animation here
+        end
+    end
+end
+
+--// functions
+local function MenuToggle(Action_Name: string, State: EnumItem, Input: InputObject)
+    if not State or State == Enum.UserInputState.Begin then
+        Menu:SetVisible(not Menu.IsVisible)
+    end
+end
+
+task.spawn(MenuNameUpdate)
+
+-- Set the size of the menu
+Menu:SetSize(450, 380)
+
+-- Notify that the script has loaded
 Menu.Notify("Script Loaded.", 2)
-Menu.Tab("Legit")
-Menu.BodyPart("Legit", "BodyPart", "Right", function(bool)
-jamkles.camlock.aim_part = bool
-end
-)
+
+-- Create the Combat tab
+Menu.Tab("Combat")
+-- Create the Rage tab
 Menu.Tab("Rage")
+-- Create the Visuals tab
 Menu.Tab("Visuals")
-Menu.Tab("settings")
 
-Menu.Container("Legit", "Camlock", "Left")
-Menu.Container("Legit", "AutoPred", "Right")
-
-Menu.Container("Legit", "Offsets", "Left")
-
-Menu.Container("Legit", "TriggerBot", "Left")
-
-Menu.Container("Legit", "Resolver", "Left")
-
-Menu.Container("Legit", "Hitbox Expander", "Left")
-
-Menu.Container("Legit", "Trashtalk", "Left")
-
-Menu.Container("Rage", "TargetStrafe", "Left")
-
-Menu.Container("Rage", "Cframe", "Right")
-
-Menu.Container("Rage", "LockPos", "Left")
-
-Menu.Container("Visuals", "Tracer", "Left")
-
-
-Menu.Container("Visuals", "Colorcorrection", "Right")
-
-Menu.Container("Visuals", "HitEffects", "Left")
-
-
--- ////// camlock //////
-
-Menu.CheckBox(
-    "Legit",
-    "Camlock",
-    "Toggle camlock",
-    false,
-    function(value)
-			jamkles.camlock.Enabled = value
-    end,
-    "Toggles lock"
-)
-
-Menu.CheckBox(
-    "Legit",
-    "Camlock",
-    "Auto reload",
-    false,
-    function(value)
-			jamkles.camlock.AutoReload = value
-    end,
-    "reload automatically after bullets out"
-)
-
-Menu.CheckBox(
-    "Legit",
-    "Camlock",
-    "Antigroundshot",
-    false,
-    function(value)
-			jamkles.camlock.AntiGroundShots = value
-    end,
-    " "
-)
-
-Menu.CheckBox(
-    "Legit",
-    "Camlock",
-    "AntiAimView",
-    false,
-    function(value)
-			jamkles.camlock.AntiAimView = value
-    end,
-    " "
-)
-
-Menu.TextBox(
-    "Legit",
-    "Camlock",
-    "Prediction",
-    function(value)
-			jamkles.camlock.prediction = value
-    end,
-    "Set Prediction value"
-)
-
-
-
-Menu.TextBox(
-    "Legit",
-    "Camlock",
-    "Smoothness",
-    function(value)
-			jamkles.camlock.smoothness = value
-    end,
-    "Set Smoothness value"
-)
-
-Menu.ComboBox(
-    "Legit",
-    "Camlock",
-    "Hitpart",
-    "UpperTorso",
-    {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"},
-    function(value)
-			jamkles.camlock.aim_part = value
-    end,
-    "The part to aim at a player "
-)
-
--- ////// AutoPred //////
-
-Menu.CheckBox(
-    "Legit",
-    "AutoPred",
-    "Toggle AutoPred",
-    false,
-    function(value)
-			jamkles.Autopred.Enabled = value
-    end,
-    "Toggles AutoPred"
-)
-
-Menu.CheckBox(
-    "Legit",
-    "AutoPred",
-    "Enable Simple AutoPred",
-    false,
-    function(value)
-			jamkles.Autopred.Simple = value
-    end,
-    "Enables Simple AutoPred"
-)
-
-Menu.CheckBox(
-    "Legit",
-    "AutoPred",
-    "Enable Complex AutoPred",
-    false,
-    function(value)
-			jamkles.Autopred.Complex = value
-    end,
-    "Enables Complex AutoPred"
-)
-
-
-
--- ////// Offsets //////
-
-Menu.CheckBox(
-    "Legit",
-    "Offsets",
-    "Toggle Offsets",
-    false,
-    function(value)
-			jamkles.Offsets.Enabled = value
-    end,
-    "Toggles jamp and land function"
-)
-
-Menu.TextBox(
-    "Legit",
-    "Offsets",
-    "Jump",
-    function(value)
-			jamkles.Offsets.jumpOffset = value
-    end,
-    "Set jump offset value"
-)
-
-Menu.TextBox(
-    "Legit",
-    "Offsets",
-    "Land",
-    function(value)
-			jamkles.Offsets.fallOffset = value
-    end,
-    "Set land offset value"
-)
-
--- ////// Trigger Bot //////
-
-Menu.CheckBox(
-    "Legit",
-    "TriggerBot",
-    "Toggle TriggerBot",
-    false,
-    function(value)
-			jamkles.Triggerbot.Enabled = value
-    end,
-    "a"
-)
-
-Menu.TextBox(
-    "Legit",
-    "TriggerBot",
-    "delay",
-    function(value)
-			jamkles.Triggerbot.delay = value
-    end,
-    "value set for trash talk delay"
-)
-
--- ////// Resolver //////
-
-Menu.CheckBox(
-    "Legit",
-    "Resolver",
-    "Toggle Resolver",
-    false,
-    function(value)
-			jamkles.Resolver.Enabled = value
-    end,
-    "Toggles Reolver for desyncs"
-)
-
-Menu.TextBox(
-    "Legit",
-    "Resolver",
-    "resolving method",
-    function(value)
-			jamkles.Resolver.Method = value
-    end,
-    "Set at recalculating"
-)
-
-Menu.ComboBox(
-    "Legit",
-    "Resolver",
-    "Hitpart",
-    "Head",
-    {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"},
-    function(value)	jamkles.Resolver.PredictionSettings.HitPart = value
-    end,
-    "Resolving aim part "
-)
-
--- ////// Hitbox expander //////
-
-Menu.CheckBox(
-    "Legit",
-    "Hitbox Expander",
-    "Toggle Hitbox expander",
-    false,
-    function(value)
-			jamkles.Reach.Enabled = value
-    end,
-    "Toggles expander for hitbox"
-)
-
-Menu.CheckBox(
-    "Legit",
-    "Hitbox Expander",
-    "Toggle bring all",
-    false,
-    function(value)
-			jamkles.BringAll.Enabled = value
-    end,
-    "Toggles bring all"
-)
-
-Menu.TextBox(
-    "Legit",
-    "Hitbox Expander",
-    "bring distance",
-    function(value)
-			jamkles.BringAll.Distance = value
-    end,
-    "Set at distance"
-)
-
--- ////// Trash talk //////
-
-Menu.CheckBox(
-    "Legit",
-    "Trashtalk",
-    "Toggle trashtalkonko",
-    false,
-    function(value)
-			jamkles.Trashtalk.trashtalkonkill = value
-    end,
-    "Toggles a trashtalk"
-)
-
-Menu.TextBox(
-    "Legit",
-    "Trashtalk",
-    "delay",
-    function(value)
-			jamkles.Trashtalk.delay = value
-    end,
-    "value set for trash talk delay"
-)
-
-
--- ////// Target strafe //////
-
-Menu.CheckBox(
-    "Rage",
-    "TargetStrafe",
-    "Toggle stafe",
-    false,
-    function(value)
-			jamkles.TargetStrafe.Enabled = value
-    end,
-    "Toggles a targetstrafe"
-)
-
-Menu.CheckBox(
-    "Rage",
-    "TargetStrafe",
-    "Toggle randomiser",
-    false,
-    function(value)
-			jamkles.TargetStrafe.Randomiser = value
-    end,
-    "Toggles a randomiser strafe"
-)
-
-Menu.Slider(
-    "Rage",
-    "TargetStrafe",
-    "Strafe Speed",
-    1,
-    50,
-    1,
-    "%",
-    0,
-    function(value)
-			jamkles.TargetStrafe.Speed = value
-    end,
-    "value set for strafe speed"
-)
-
-Menu.Slider(
-    "Rage",
-    "TargetStrafe",
-    "Strafe Height",
-    1,
-    50,
-    1,
-    "%",
-    0,
-    function(value)
-			jamkles.TargetStrafe.Height = value
-    end,
-    "value set for strafe height"
-)
-
-Menu.Slider(
-    "Rage",
-    "TargetStrafe",
-    "Strafe radius",
-    1,
-    50,
-    1,
-    "%",
-    0,
-    function(value)
-			jamkles.TargetStrafe.Radius = value
-    end,
-    "value set for strafe radius"
-)
-
--- ////// Cframe //////
-
-Menu.CheckBox(
-    "Rage",
-    "Cframe",
-    "Toggle cframe",
-    false,
-    function(value)
-			jamkles.CframeSpeed.Enabled = value
-    end,
-    "Toggles a Cframe speed "
-)
-
-Menu.Slider(
-    "Rage",
-    "Cframe",
-    "Speed amount",
-    1,
-    10,
-    1,
-    "%",
-    0,
-    function(value)
-			jamkles.CframeSpeed.Speed = value
-    end,
-    "value set for Cframe Speed"
-)
-
--- ////// LockPos //////
-
-Menu.CheckBox(
-    "Rage",
-    "LockPos",
-    "Toggle LockPos",
-    false,
-    function(value)
-			jamkles.Lockposition.Enabled = value
-    end,
-    "Toggles Lockposition"
-)
-
-Menu.CheckBox(
-    "Rage",
-    "LockPos",
-    "X Pos",
-    false,
-    function(value)
-			jamkles.Lockposition.Xpos = value
-    end,
-    "Toggles x pos"
-)
-
-Menu.CheckBox(
-    "Rage",
-    "LockPos",
-    "Y Pos",
-    false,
-    function(value)
-			jamkles.Lockposition.Ypos = value
-    end,
-    "Toggles y pos"
-)
-
-Menu.CheckBox(
-    "Rage",
-    "LockPos",
-    "Z Pos",
-    false,
-    function(value)
-			jamkles.Lockposition.Zpos = value
-    end,
-    "Toggles z pos"
-)
-
--- ////// Tracer //////
-
-Menu.CheckBox(
-    "Visuals",
-    "Tracer",
-    "Toggle Tracers",
-    false,
-    function(value)
-			jamkles.Tracer.Visable = value
-    end,
-    "Toggles tracer"
-)
-
-Menu.TextBox(
-    "Visuals",
-    "Tracer",
-    "Transparency",
-    function(value)
-			jamkles.Tracer.Transparency = value
-    end,
-    "Transparency"
-)
-
-Menu.TextBox(
-    "Visuals",
-    "Tracer",
-    "Thickness",
-    function(value)
-			jamkles.Tracer.Thickness = value
-    end,
-    "Thickness"
-)
-
--- ////// colour correction //////
-
-Menu.CheckBox(
-    "Visuals",
-    "Colorcorrection",
-    "Toggle Colorcorrection",
-    false,
-    function(value)
-			jamkles.VisualEffects.ColorCorrection = value
-    end,
-    "Toggles tracer"
-)
-
-Menu:SetTitle("jamkles.Lua")
-Menu:SetVisible(true)
-Menu:Init()
-
-
-getgenv().jamkles = {
-    camlock = {
-        Enabled = false,
-        Toggled = false,
-        prediction = 0.14285,
-        smoothness = 0.4,
-        aim_part = "HumanoidRootPart",
-        AutoReload = false,
-        AntiAimView = false,
-        AntiGroundShots = false
-    },
-    Autopred = {
-        Enabled = false,
-        Simple = false,
-        Complex = false
-    },
-    CframeSpeed = {
-        Enabled = false,
-        Speed = 3
-    },
-    Fov = {
-        Visible = true,
-        Transparency = 0,
-        Size = 120,
-        Filled = false,
-        Thickness = 2.5,
-        Color = Color3.fromRGB(255, 255, 255)
-    },
-    Offsets = {
-        Enabled = true,
-        jumpOffset = 0,
-        fallOffset = 0
-    },
-    Resolver = {
-        Enabled = false,
-        Method = "RecalculateVelocity",
-        PredictionSettings = {
-            HitPart = "Head"
-        }
-    },
-    Reach = {
-        Enabled = false
-    },
-    Hitbox = {
-        Color = Color3.fromRGB(0, 0, 0),
-        Material = Enum.Material.ForceField,
-        Size = Vector3.new(10, 10, 10),
-        Transparency = 0
-    },
-    BringAll = {
-        Enabled = false,
-        Distance = 6
-    },
-    Trashtalk = {
-        trashtalkonkill = false,
-        delay = 0.1
-    },
-    Textures = {
-        Enabled = false,
-        Material = Enum.Material.Brick,
-        UseColor = true,
-        Color = Color3.fromRGB(0, 0, 0)
-    },
-    Tracer = {
-        Visable = false,
-        Transparency = 1,
-        Thickness = 3,
-        Color = Color3.fromRGB(255, 0, 0)
-    },
-    TargetStrafe = {
-        Enabled = false,
-        Speed = 50,
-        Height = 50,
-        Radius = 50,
-        Randomiser = false,
-    },
-    TriggerBot = {
-        Enabled = false,
-        ClickDelay = 0
-    },
-    VisualEffects = {
-        ColorCorrection = false,
-        ColorCorrectionBrightness = 0,
-        ColorCorrectionSaturation = 0,
-        ColorCorrectionContrast = 1
-    },
-    AutoAirShot = {
-        Enabled = false,
-        ClickDelay = 0.5
-    },
-    Easing = {
-        EasingStyle = Enum.EasingStyle.Quad,
-        EasingDirection = Enum.EasingDirection.InOut
-    },
-    Checks = {
-        KnockedCheck = false,
-    },
-    Lockposition = {
-        Enabled = true,
-        Xpos = false,
-        Ypos = false,
-        Zpos = false
-    },
-		HitEffects = {
-			Enabled = false,
-			Effects = Electric,
-			Color = Color3.fromRGB(100, 255, 100)
-		}
-}
-
-if not Game:IsLoaded() then
-    Game.Loaded:Wait()
+-- Target Lock Container
+Menu.Container("Combat", "TargetLock", "Left")
+-- Camlock Container
+Menu.Container("Combat", "CamLock", "Right")
+-- CFrame Desync Container
+Menu.Container("Rage", "CFrameDesync", "Left")
+-- Chams Container
+Menu.Container("Visuals", "Chams", "Left")
+-- Create the Miscellaneous tab
+Menu.Tab("Miscellaneous")
+-- Stuff Container
+Menu.Container("Miscellaneous", "Stuff", "Left")
+
+-- Enable toggle for Target Lock
+Menu.CheckBox("Combat", "TargetLock", "Enabled", false, function(Bool)
+    getgenv().Settings.WhyIsSheLookingAtMe.Enabled = Bool
+end)
+
+-- Prediction Method Dropdown
+Menu.ComboBox("Combat", "TargetLock", "lock type", "Namecall", {"Index", "Namecall"}, function(option)
+    getgenv().Settings.WhyIsSheLookingAtMe.LOCKTYPE = Bool
+end)
+
+-- Prediction Textbox
+Menu.TextBox("Combat", "TargetLock", "Prediction", "0.135", function(Text)
+   getgenv().PREDICTION = Text
+end)
+
+-- Auto Prediction toggle
+Menu.CheckBox("Combat", "TargetLock", "Auto Prediction", false, function(Bool)
+    getgenv().Settings.WhyIsSheLookingAtMe.AUTOPRED = Bool
+end)
+
+-- Prediction Method Dropdown
+Menu.ComboBox("Combat", "TargetLock", "Prediction Method", "Normal", {"Normal", "Math"}, function(option)
+    getgenv().AutoPredType = option
+end)
+
+-- Enable toggle for Camlock
+Menu.CheckBox("Combat", "CamLock", "Enabled", false, function(Bool)
+    getgenv().Settings.WhyIsSheLookingAtMe.Camera.Enabled = Bool
+end)
+
+-- Cam Prediction Textbox
+Menu.TextBox("Combat", "CamLock", "CamPrediction", "0.135", function(Text)
+    getgenv().CAMPREDICTION = Text
+end)
+
+Menu.TextBox("Combat", "CamLock", "smoothness", "0.9", function(Text)
+    getgenv().HorizontalSmoothness = Text
+end)
+
+-- Auto Campred toggle
+Menu.CheckBox("Combat", "CamLock", "Auto Campred", false, function(Bool)
+    getgenv().Settings.WhyIsSheLookingAtMe.AdvancedAutoPred = Bool
+end)
+
+-- Body Part Section
+Menu.BodyPart("Combat", "BodyPart", "Left", function(bool)
+    getgenv().SelectedPart = bool
+end)
+
+-- Enable toggle for CFrame Desync
+Menu.CheckBox("Rage", "CFrameDesync", "Enabled", false, function(Bool)
+   getgenv().CFrameDesync.Enabled = Bool
+end)
+
+-- Visualizer toggle
+Menu.CheckBox("Rage", "CFrameDesync", "Visualizer", false, function(Bool)
+    getgenv().CFrameDesync.Visualize = Bool
+end)
+
+Menu.TextBox("Rage", "CFrameDesync", "speed", "25", function(Text)
+    getgenv().CFrameDesync.TargetStrafe.Speed = Text
+end)
+
+Menu.TextBox("Rage", "CFrameDesync", "Height", "5", function(Text)
+    getgenv().CFrameDesync.TargetStrafe.Height = Text
+end)
+
+Menu.TextBox("Rage", "CFrameDesync", "Distance", "1", function(Text)
+    getgenv().CFrameDesync.TargetStrafe.Distance = Text
+end)
+
+--// Player Chams
+
+WeaponEffectsEnabled = false
+WeaponEffectsMaterial = "ForceField"
+WeaponEffectsColor = Color3.fromRGB(100,81,195)
+SelfChamsColor = Color3.fromRGB(0,0,0)
+SelfChams = false
+SelfChamsMaterial = "ForceField"
+CloneMaterial = "ForceField"
+
+function Weld(x,y)
+       local W = Instance.new("Weld")
+       W.Part0 = x
+       W.Part1 = y
+       local CJ = CFrame.new(x.Position)
+       local C0 = x.CFrame:inverse()*CJ
+       local C1 = y.CFrame:inverse()*CJ
+       W.C0 = C0
+       W.C1 = C1
+       W.Parent = x
 end
 
-loadstring(Game:HttpGet("https://femboyisgood.xyz/loader/script/adonis.lua", true))()
-
-local NotificationHolder =
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Module.Lua"))()
-local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Client.Lua"))()
-Notification:Notify(
-    {Title = "jamkles.lua", Description = "loaded"},
-    {OutlineColor = Color3.fromRGB(80, 80, 80), Time = 3, Type = "default"},
-    {
-        Image = "http://www.roblox.com/asset/?id=6023426923",
-        ImageColor = Color3.fromRGB(255, 84, 84),
-        Callback = function(State)
-            print(tostring(State))
-        end
-    }
-)
-
-local Tool = Instance.new("Tool")
-Tool.RequiresHandle = false
-Tool.Name = "Lock Tool"
-Tool.Parent = game.Players.LocalPlayer.Backpack
-
-local player = game.Players.LocalPlayer
-
-local function connectCharacterAdded()
-    player.CharacterAdded:Connect(onCharacterAdded)
-end
-
-connectCharacterAdded()
-
-player.CharacterRemoving:Connect(
-    function()
-        Tool.Parent = game.Players.LocalPlayer.Backpack
-    end
-)
-
-local HitEffectModule = {
-    Locals = {
-        Type = {
-            ["Dots"] = nil,
-            ["Electric"] = nil,
-        },
-    },
-    Functions = {},
-    Settings = {HitEffect = {Color = jamkles.HitEffects.Color}}
-	}
-	
-local Players = game:GetService("Players")
-local RS = game:GetService("RunService")
-local WS = game:GetService("Workspace")
-local GS = game:GetService("GuiService")
-local UIS = game:GetService("UserInputService")
-local l = game:GetService("Lighting")
-
-local ColorCorrection = Instance.new("ColorCorrectionEffect", l)
-
-local VirtualInputManager = Game:GetService("VirtualInputManager")
-local StarterGui = Game:GetService("StarterGui")
-
-local player = Players.LocalPlayer
-local playerCamera = Workspace.CurrentCamera
-local CC = Workspace.CurrentCamera
-
-local LP = Players.LocalPlayer
-local Mouse = LP:GetMouse()
-local Camera = WS.CurrentCamera
-local GetGuiInset = GS.GetGuiInset
-
-local jamklestarget = nil
-local jamklesPlayerCharacter = nil
-local jamklesPlayerHumanoidRootPart = nil
-local jamklesPlayerAimPart = nil
-local TargetedPlayer
-local cframespeeding = true
-
-local TexturesEnabled = getgenv().jamkles.Textures.Enabled
-local TexturesMaterial = getgenv().jamkles.Textures.Material
-local TexturesUseColor = getgenv().jamkles.Textures.UseColor
-local TexturesColor = getgenv().jamkles.Textures.Color
-
-RS.RenderStepped:Connect(
-    function()
-        if jamkles.camlock.enabled and jamklestarget and jamklestarget.Character and jamklestarget.Character:FindFirstChild(jamkles.camlock.aim_part) then
-            local aimPart = jamklestarget.Character[jamkles.camlock.aim_part]
-            local targetPosition = aimPart.Position + aimPart.Velocity * jamkles.camlock.prediction
-            local lookPosition = CFrame.new(Camera.CFrame.p, targetPosition)
-            Camera.CFrame =
-                Camera.CFrame:Lerp(
-                lookPosition,
-                jamkles.camlock.smoothness,
-                jamkles.Easing.EasingStyle,
-                jamkles.Easing.EasingDirection
-            )
-
-            if jamkles.TargetStrafe.Enabled then
-                local lp = player.Character
-                local targpos = jamklestarget.Character.HumanoidRootPart.Position
-                local strafeOffset
-
-                if jamkles.TargetStrafe.Randomiser then
-                    strafeOffset =
-                        Vector3.new(
-                        math.random(-jamkles.TargetStrafe.Radius, jamkles.TargetStrafe.Radius),
-                        math.random(0, jamkles.TargetStrafe.Height),
-                        math.random(-jamkles.TargetStrafe.Radius, jamkles.TargetStrafe.Radius)
-                    )
-                else
-                    strafeOffset =
-                        Vector3.new(
-                        math.cos(tick() * jamkles.TargetStrafe.Speed) * jamkles.TargetStrafe.Radius,
-                        jamkles.TargetStrafe.Height,
-                        math.sin(tick() * jamkles.TargetStrafe.Speed) * jamkles.TargetStrafe.Radius
-                    )
-                end
-
-                local strafePosition = targpos + strafeOffset
-                strafePosition = Vector3.new(strafePosition.X, math.max(strafePosition.Y, targpos.Y), strafePosition.Z)
-
-                lp:SetPrimaryPartCFrame(CFrame.new(strafePosition))
-                player.Character.HumanoidRootPart.CFrame =
-                    CFrame.new(
-                    player.Character.HumanoidRootPart.CFrame.Position,
-                    Vector3.new(targpos.X, player.Character.HumanoidRootPart.CFrame.Position.Y, targpos.Z)
-                )
-            end
-        end
-    end
-)
-
-if jamkles.Lockposition.Enabled == true then
-    if getgenv().jamkles.Lockposition.Ypos then
-        targetPosition = Vector3.new(targetPosition.X, player.Character.HumanoidRootPart.Position.Y, targetPosition.Z)
-    end
-    if getgenv().jamkles.Lockposition.Xpos then
-        targetPosition = Vector3.new(player.Character.HumanoidRootPart.Position.X, targetPosition.Y, targetPosition.Z)
-    end
-    if getgenv().jamkles.Lockposition.Zpos then
-        targetPosition = Vector3.new(targetPosition.X, targetPosition.Y, player.Character.HumanoidRootPart.Position.Z)
-    end
-end
-
-if getgenv().Loaded == true then
-    Notification:Notify(
-        {Title = "jamkles.lua", Description = "loaded"},
-        {OutlineColor = Color3.fromRGB(80, 80, 80), Time = 3, Type = "default"},
-        {
-            Image = "http://www.roblox.com/asset/?id=6023426923",
-            ImageColor = Color3.fromRGB(255, 84, 84),
-            Callback = function(State)
-                print(tostring(State))
-            end
-        }
-    )
-    return
-end
-
-getgenv().Loaded = true
-
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Visible = jamkles.Fov.Visible
-FOVCircle.Color = jamkles.Fov.Color
-FOVCircle.Transparency = jamkles.Fov.Transparency
-FOVCircle.Thickness = jamkles.Fov.Thickness
-FOVCircle.NumSides = 1000000
-FOVCircle.Radius = jamkles.Fov.Size
-FOVCircle.Filled = jamkles.Fov.Filled
-
-
-
-local GameReference = cloneref(Game)
-
-if not GameReference:IsLoaded() then
-    GameReference.Loaded:Wait()
-end
-
-
-local Workspace = GameReference:GetService("Workspace")
-local RunService = GameReference:GetService("RunService")
-local Players = GameReference:GetService("Players")
-local CoreGui = GameReference:GetService("CoreGui")
-
-
-local LocalPlayer = Players.LocalPlayer
-local Camera =
-    Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera") or Workspace:FindFirstChildOfClass("Camera")
-
-local Lines = {}
-
-for _, jamklestarget in pairs(Players:GetPlayers()) do
-    if jamklestarget ~= LocalPlayer then
-        local Line = Drawing.new("Line")
-        Line.Visible = jamkles.Tracer.Visable
-        Line.Transparency = jamkles.Tracer.Transparency
-        Line.Thickness = jamkles.Tracer.Thickness
-        Line.Color = jamkles.Tracer.Color
-        Lines[jamklestarget] = Line
-    end
-end
-
-RunService.RenderStepped:Connect(
-    function()
-        for jamklestarget, Line in pairs(Lines) do
-            if
-                jamklestarget.Character and jamklestarget.Character:FindFirstChild("HumanoidRootPart") and
-                    LocalPlayer.Character and
-                    LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-             then
-                local ViewportPosition_LocalPlayer =
-                    Camera:WorldToViewportPoint(LocalPlayer.Character.HumanoidRootPart.Position)
-                local ViewportPosition_jamklestarget, OnScreen_jamklestarget =
-                    Camera:WorldToViewportPoint(jamklestarget.Character.HumanoidRootPart.Position)
-
-                if OnScreen_jamklestarget then
-                    Line.Visible = jamkles.Tracer.Visable
-                    Line.From = Vector2.new(ViewportPosition_LocalPlayer.X, ViewportPosition_LocalPlayer.Y)
-                    Line.To = Vector2.new(ViewportPosition_jamklestarget.X, ViewportPosition_jamklestarget.Y)
-                elseif not OnScreen_jamklestarget then
-                    Line.Visible = false
-                end
-            end
-        end
-    end
-)
-
-Players.PlayerRemoving:Connect(
-    function(JamklesTarget)
-        if Lines[jamklestarget] then
-            Lines[JamklesTarget]:Remove()
-            Lines[JamklesTarget] = nil
-        end
-    end
-)
-
-Players.PlayerAdded:Connect(
-    function(JamklesTarget)
-        if jamklestarget ~= LocalPlayer then
-            local Line = Drawing.new("Line")
-            Line.Visible = jamkles.Tracer.Visable
-            Line.Transparency = jamkles.Tracer.Transparency
-            Line.Thickness = jamkles.Tracer.Thickness
-            Line.Color = jamkles.Tracer.Color
-            Line[jamklestarget] = Line
-        end
-    end
-)
-
-function WTVP(arg)
-    return Camera:WorldToViewportPoint(arg)
-end
-
-function WTSP(arg)
-    return Camera.WorldToScreenPoint(Camera, arg)
-end
-
-local function WallCheck(Part)
-    local Direction =
-        (Part.Position - playerCamera.CFrame.Position).Unit * (Part.Position - playerCamera.CFrame.Position).Magnitude
-    local NewRay = Ray.new(playerCamera.CFrame.Position, Direction)
-    local Hit, Position = Workspace:FindPartOnRay(NewRay, playerCharacter, false, true)
-
-    if Hit and Hit:IsDescendantOf(Part.Parent) and Part.Parent:IsA("Model") then
-        return true
-    end
-    return false
-end
-
-local function GetClosestPlayer()
-    local ClosestPlayer = nil
-    local ShortestDistance = math.huge
-
-    for _, Player in ipairs(Players:GetPlayers()) do
-        if Player ~= player and Player.Character then
-            for _, PlayerPart in ipairs(Player.Character:GetChildren()) do
-                if PlayerPart:IsA("BasePart") and PlayerPart.Transparency ~= 1 then
-                    local ViewportPointPosition, OnScreen = Camera:WorldToViewportPoint(PlayerPart.Position)
-                    local MagnitudeDistance =
-                        (Vector2.new(ViewportPointPosition.X, ViewportPointPosition.Y) - FOVCircle.Position).Magnitude
-
-                    if OnScreen and MagnitudeDistance < ShortestDistance and MagnitudeDistance <= FOVCircle.Radius then
-                        ClosestPlayer = Player
-                        ShortestDistance = MagnitudeDistance
-                    end
-                end
-            end
-        end
-    end
-    return ClosestPlayer
-end
-
-local function isKnockedOrGrabbed(jamklestarget)
-    if getgenv().jamkles.Checks.KnockedCheck and jamklestarget and jamklestarget.Character then
-        local bodyEffects = jamklestarget.Character:FindFirstChild("BodyEffects")
-        if bodyEffects then
-            local knockedOut = bodyEffects:FindFirstChild("K.O") and bodyEffects["K.O"].Value or false
-            local grabbed = jamklestarget.Character:FindFirstChild("GRABBING_CONSTRAINT") ~= nil
-            if knockedOut or grabbed or jamklestarget.Character.Humanoid.Health < 4 then
-                return true
-            end
-        end
-    end
-    return false
-end
-
-spawn(
-    function()
-        RS.Heartbeat:Connect(
-            function()
-                if jamkles.CframeSpeed.Enabled then
-                    player.Character.HumanoidRootPart.CFrame =
-                        player.Character.HumanoidRootPart.CFrame +
-                        player.Character.Humanoid.MoveDirection * jamkles.CframeSpeed.Speed
-                end
-            end
-        )
-    end
-)
-
-RS.RenderStepped:Connect(
-    function()
-        TargetedPlayer = GetClosestPlayer()
-        if
-            jamkles.TriggerBot.Enabled and TargetedPlayer and TargetedPlayer.Character and
-                TargetedPlayer.Character:FindFirstChildOfClass("Humanoid").Health ~= 0
-         then
-            task.wait(jamkles.TriggerBot.ClickDelay)
-            for _, BodyPart in ipairs(TargetedPlayer.Character:GetChildren()) do
-                if
-                    BodyPart.Name == "Head" or BodyPart.Name == "UpperTorso" or BodyPart.Name == "LowerTorso" or
-                        BodyPart.Name == "LeftUpperArm" or
-                        BodyPart.Name == "LeftLowerArm" or
-                        BodyPart.Name == "LeftHand" or
-                        BodyPart.Name == "RightUpperArm" or
-                        BodyPart.Name == "RightLowerArm" or
-                        BodyPart.Name == "RightHand" or
-                        BodyPart.Name == "LeftUpperLeg" or
-                        BodyPart.Name == "LeftLowerLeg" or
-                        BodyPart.Name == "LeftFoot" or
-                        BodyPart.Name == "RightUpperLeg" or
-                        BodyPart.Name == "RightLowerLeg" or
-                        BodyPart.Name == "RightFoot"
-                 then
-                    local ViewportPointPosition, OnScreen = playerCamera:WorldToViewportPoint(BodyPart.Position)
-                    if OnScreen then
-                        local MagnitudeDistance =
-                            (Vector2.new(ViewportPointPosition.X, ViewportPointPosition.Y) - FOVCircle.Position).Magnitude
-                        if MagnitudeDistance <= FOVCircle.Radius then
-                            
-                            if tool and tool:FindFirstChild("Lock Tool") then
-                                tool:Activate()
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-)
-
-RS.RenderStepped:Connect(
-    function()
-        if jamklestarget and jamkles.AutoAirShot.Enabled then
-            local TargetedPlayer = jamklestarget
-            if TargetedPlayer and TargetedPlayer.Character then
-                local Humanoid = TargetedPlayer.Character:FindFirstChildOfClass("Humanoid")
-                local HRP = TargetedPlayer.Character:FindFirstChild("HumanoidRootPart")
-
-                if Humanoid and Humanoid.Health > 0 and HRP then
-                    
-                    if HRP.Velocity.Y > 2 then
-                        
-                        task.wait(jamkles.AutoAirShot.ClickDelay)
-
-                        for _, BodyPart in ipairs(TargetedPlayer.Character:GetChildren()) do
-                            if
-                                BodyPart:IsA("BasePart") and
-                                    (BodyPart.Name == "Head" or BodyPart.Name == "UpperTorso" or
-                                        BodyPart.Name == "LowerTorso" or
-                                        BodyPart.Name == "LeftUpperArm" or
-                                        BodyPart.Name == "LeftLowerArm" or
-                                        BodyPart.Name == "LeftHand" or
-                                        BodyPart.Name == "RightUpperArm" or
-                                        BodyPart.Name == "RightLowerArm" or
-                                        BodyPart.Name == "RightHand" or
-                                        BodyPart.Name == "LeftUpperLeg" or
-                                        BodyPart.Name == "LeftLowerLeg" or
-                                        BodyPart.Name == "LeftFoot" or
-                                        BodyPart.Name == "RightUpperLeg" or
-                                        BodyPart.Name == "RightLowerLeg" or
-                                        BodyPart.Name == "RightFoot")
-                             then
-                                local ViewportPointPosition, OnScreen =
-                                    playerCamera:WorldToViewportPoint(BodyPart.Position)
-                                if OnScreen then
-                                    local MagnitudeDistance =
-                                        (Vector2.new(ViewportPointPosition.X, ViewportPointPosition.Y) -
-                                        FOVCircle.Position).Magnitude
-
-                                    if MagnitudeDistance <= FOVCircle.Radius then
-                                        
-                                        if tool then
-                                            tool:Activate() 
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-)
-Tool.Activated:Connect(
-    function()
-        jamkles.camlock.Toggled = not jamkles.camlock.Toggled
-
-        if jamkles.camlock.Toggled then
-            jamklestarget = GetClosestPlayer()
-            if jamklestarget then
-                Notification:Notify(
-                    {Title = "jamkles.lua", Description = "Locked on: " .. tostring(jamklestarget.DisplayName)},
-                    {OutlineColor = Color3.fromRGB(80, 80, 80), Time = 3, Type = "default"},
-                    {
-                        Image = "http://www.roblox.com/asset/?id=6023426923",
-                        ImageColor = Color3.fromRGB(255, 84, 84),
-                        Callback = function(State)
-                            print(tostring(State))
-                        end
-                    }
-                )
-            end
-        elseif not jamkles.camlock.Toggled then
-            if jamklestarget ~= nil then
-                jamklestarget = nil
-                Notification:Notify(
-                    {Title = "jamkles.lua", Description = "unlocked"},
-                    {OutlineColor = Color3.fromRGB(80, 80, 80), Time = 3, Type = "default"},
-                    {
-                        Image = "http://www.roblox.com/asset/?id=6023426923",
-                        ImageColor = Color3.fromRGB(255, 84, 84),
-                        Callback = function(State)
-                            print(tostring(State))
-                        end
-                    }
-                )
-            end
-        end
-    end
-)
-
-local OriginalMaterials = {}
-local OriginalColors = {}
-
-local function changeParts(model, applyChanges)
-    for _, part in ipairs(model:GetChildren()) do
-        if part:IsA("BasePart") then
-            local isPlayerCharacter = false
-            for _, player in ipairs(game.Players:GetPlayers()) do
-                if part:IsDescendantOf(player.Character) then
-                    isPlayerCharacter = true
-                    break
-                end
-            end
-
-            if not isPlayerCharacter then
-                if applyChanges then
-                    OriginalMaterials[part] = part.Material
-                    OriginalColors[part] = part.Color
-
-                    part.Material = TexturesMaterial
-                    if TexturesUseColor then
-                        part.Color = TexturesColor
-                    end
-                else
-                    if OriginalMaterials[part] then
-                        part.Material = OriginalMaterials[part]
-                        part.Color = OriginalColors[part]
-                    end
-                end
-            end
-        end
-        changeParts(part, applyChanges)
-    end
-end
-
-if TexturesEnabled then
-    changeParts(game.Workspace, true)
-end
-
-RS.RenderStepped:Connect(
-    function()
-        local TouchPosition = UIS:GetMouseLocation()
-        FOVCircle.Position = Vector2.new(playerCamera.ViewportSize.X / 2, playerCamera.ViewportSize.Y / 2)
-
-        if jamkles.camlock.Enabled and jamkles.camlock.Toggled and jamklestarget and jamklestarget.Character and jamklestarget.Character:FindFirstChild(jamkles.camlock.aim_part) then
-            local aimPart = jamklestarget.Character[jamkles.camlock.aim_part]
-            local humanoid = jamklestarget.Character:FindFirstChild("Humanoid")
-
-            local targetPos =
-                aimPart.Position + (jamklestarget.Character.HumanoidRootPart.Velocity * jamkles.camlock.prediction)
-
-            if getgenv().jamkles.Offsets.Enabled and humanoid then
-                if humanoid:GetState() == Enum.HumanoidStateType.Jumping then
-                    targetPos = targetPos + Vector3.new(0, getgenv().jamkles.Offsets.jumpOffset, 0)
-                elseif humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-                    targetPos = targetPos + Vector3.new(0, getgenv().jamkles.Offsets.fallOffset, 0)
-                end
-            end
-
-            local cameraLook = CFrame.new(Camera.CFrame.Position, targetPos)
-            Camera.CFrame = Camera.CFrame:Lerp(cameraLook, jamkles.camlock.smoothness)
-        end
-    end
-)
-
-function handleCFrameWalk()
-    if jamkles.Enabled and jamkles.Cframe.Enabled then
-        local character = player.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            local humanoidRootPart = character.HumanoidRootPart
-            local moveDirection = character.Humanoid.MoveDirection
-
-            humanoidRootPart.CFrame = humanoidRootPart.CFrame * CFrame.new(moveDirection * jamkles.Cframe.Speed)
-        end
-    end
-end
-
-RS.Heartbeat:Connect(
-    function()
-        if jamkles.camlock.AutoReload then
-            local player = game:GetService("Players").LocalPlayer
-            local character = player.Character
-            if character then
-                local tool = character:FindFirstChildWhichIsA("Tool")
-                if tool then
-                    local ammo = tool:FindFirstChild("Ammo")
-                    if ammo and ammo.Value <= 0 then
-                        game:GetService("ReplicatedStorage").MainEvent:FireServer("Reload", tool)
-                    end
-                end
-            end
-        end
-    end
-)
-
-spawn(
-    function()
-        while true do
-            if getgenv().jamkles.Trashtalk.trashtalkonkill and jamklestarget and jamklestarget.Character then
-                local humanoid = jamklestarget.Character:FindFirstChild("Humanoid")
-                if humanoid and humanoid.Health <= 2 then
-                    local chatEvents =
-                        game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
-                    if chatEvents then
-                        local sayMessageRequest = chatEvents:FindFirstChild("SayMessageRequest")
-                        if sayMessageRequest and sayMessageRequest:IsA("RemoteEvent") then
-                            sayMessageRequest:FireServer("tap in w jamkles lua bro", "All")
-                            wait(0.6)
-                            sayMessageRequest:FireServer("ur dirt btw", "All")
-                        elseif sayMessageRequest and sayMessageRequest:IsA("RemoteFunction") then
-                            sayMessageRequest:InvokeServer("tap in w jamkles lua bro", "All")
-                            wait(0.6)
-                            sayMessageRequest:InvokeServer("ur dirt btw", "All")
-                        end
-                    end
-                end
-            end
-
-            wait(getgenv().jamkles.Trashtalk.delay or 5)
-        end
-    end
-)
-
-spawn(
-    function()
-        RS.Heartbeat:Connect(
-            function()
-                handleCFrameWalk()
-            end
-        )
-    end
-)
-
-for _, con in next, getconnections(workspace.CurrentCamera.Changed) do
-    task.wait()
-    con:Disable()
-end
-for _, con in next, getconnections(workspace.CurrentCamera:GetPropertyChangedSignal("CFrame")) do
-    task.wait()
-    con:Disable()
-end
-RS.PreRender:Connect(
-    function()
-        GetClosestPlayer()
-        CalculateAimPoint()
-    end
-)
-
-RS.Heartbeat:Connect(
-    function(DeltaTime)
-        if jamkles.Autopred.Enabled and jamkles.Autopred.Simple then
-            local pingValue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
-            local ping = tonumber((pingValue:match("%d+")))
-            if ping then
-                if ping > 225 then
-                    jamkles.camlock.prediction = 0.166547
-                elseif ping > 215 then
-                    jamkles.camlock.prediction = 0.15692
-                elseif ping > 205 then
-                    jamkles.camlock.prediction = 0.165732
-                elseif ping > 190 then
-                    jamkles.camlock.prediction = 0.1690
-                elseif ping > 185 then
-                    jamkles.camlock.prediction = 0.1235666
-                elseif ping > 180 then
-                    jamkles.camlock.prediction = 0.16779123
-                elseif ping > 175 then
-                    jamkles.camlock.prediction = 0.165455312399999
-                elseif ping > 170 then
-                    jamkles.camlock.prediction = 0.16
-                elseif ping > 165 then
-                    jamkles.camlock.prediction = 0.15
-                elseif ping > 160 then
-                    jamkles.camlock.prediction = 0.1223333
-                elseif ping > 155 then
-                    jamkles.camlock.prediction = 0.125333
-                elseif ping > 150 then
-                    jamkles.camlock.prediction = 0.1652131
-                elseif ping > 145 then
-                    jamkles.camlock.prediction = 0.129934
-                elseif ping > 140 then
-                    jamkles.camlock.prediction = 0.1659921
-                elseif ping > 135 then
-                    jamkles.camlock.prediction = 0.1659921
-                elseif ping > 130 then
-                    jamkles.camlock.prediction = 0.12399
-                elseif ping > 125 then
-                    jamkles.camlock.prediction = 0.15465
-                elseif ping > 110 then
-                    jamkles.camlock.prediction = 0.142199
-                elseif ping > 105 then
-                    jamkles.camlock.prediction = 0.141199
-                elseif ping > 100 then
-                    jamkles.camlock.prediction = 0.134143
-                elseif ping > 90 then
-                    jamkles.camlock.prediction = 0.1433333333392
-                elseif ping > 80 then
-                    jamkles.camlock.prediction = 0.1332241241231
-                elseif ping > 70 then
-                    jamkles.camlock.prediction = 0.1513989
-                elseif ping > 60 then
-                    jamkles.camlock.prediction = 0.133
-                elseif ping > 50 then
-                    jamkles.camlock.prediction = 0.12118333
-                elseif ping > 40 then
-                    jamkles.camlock.prediction = 0.12588244444444
-                elseif ping > 35 then
-                    jamkles.camlock.prediction = 0.12565
-                elseif ping > 30 then
-                    jamkles.camlock.prediction = 0.1419283
-                elseif ping > 25 then
-                    jamkles.camlock.prediction = 0.12948111
-                elseif ping > 20 then
-                    jamkles.camlock.prediction = 0.1211928
-                end
-            end
-        end
-    end
-)
-
-RS.Heartbeat:Connect(
-    function(DeltaTime)
-        if jamkles.Autopred.Enabled and jamkles.Autopred.Complex then
-            local pingValue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
-            local ping = tonumber(pingValue:match("%d+"))
-
-            if jamklestarget and jamklestarget.Character and jamklestarget.Character:FindFirstChild("HumanoidRootPart") then
-                local targetPosition = jamklestarget.Character.HumanoidRootPart.Position
-                local distance = (targetPosition - Camera.CFrame.Position).magnitude
-                local distanceFactor = math.clamp(distance / 1000, 0, 0.5)
-
-                if ping and ping > 0 then
-                    local pingAdjustment = math.clamp(ping / 1000, 0, 0.3)
-
-                    jamkles.camlock.prediction = pingAdjustment + distanceFactor
-                end
-            end
-        end
-    end
-)
-
-Game:GetService("RunService").RenderStepped:Connect(
-    function()
-        if jamkles.Reach.Enabled then
-            for index, player in pairs(Game:GetService("Players"):GetPlayers()) do
-                if
-                    player ~= Game:GetService("Players").LocalPlayer and player.Character and
-                        player.Character:FindFirstChild("HumanoidRootPart") and
-                        player.Character:FindFirstChildOfClass("Humanoid") and
-                        player.Character:FindFirstChildOfClass("Humanoid").Health > 2.5 and
-                        Game:GetService("Players").LocalPlayer.Character and
-                        Game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                 then
-                    local PlayerHumanoidRootPart =
-                        Game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    local TargetHumanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
-                    TargetHumanoidRootPart.CanCollide = false
-                    TargetHumanoidRootPart.Color = jamkles.Hitbox.Color
-                    TargetHumanoidRootPart.Material = jamkles.Hitbox.Material
-                    TargetHumanoidRootPart.Size = jamkles.Hitbox.Size
-                    TargetHumanoidRootPart.Transparency = jamkles.Hitbox.Transparency
-                    if jamkles.BringAll.Enabled then
-                        TargetHumanoidRootPart.Anchored = true
-                        TargetHumanoidRootPart.CFrame =
-                            CFrame.new(
-                            PlayerHumanoidRootPart.CFrame.Position -
-                                (PlayerHumanoidRootPart.CFrame.LookVector * -jamkles.BringAll.Distance),
-                            PlayerHumanoidRootPart.CFrame.Position
-                        )
-                    end
-                end
-            end
-        elseif not jamkles.Reach.Enabled then
-            for index, player in pairs(Game:GetService("Players"):GetPlayers()) do
-                if
-                    player ~= Game:GetService("Players").LocalPlayer and player.Character and
-                        player.Character:FindFirstChild("HumanoidRootPart")
-                 then
-                    local TargetHumanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
-                    TargetHumanoidRootPart.Anchored = false
-                    TargetHumanoidRootPart.CanCollide = true
-                    TargetHumanoidRootPart.BrickColor = BrickColor.new("Medium stone grey")
-                    TargetHumanoidRootPart.Material = Enum.Material.Plastic
-                    TargetHumanoidRootPart.Size = Vector3.new(2, 2, 1)
-                    TargetHumanoidRootPart.Transparency = 1
-                end
-            end
-        end
-    end
-)
-
-local lastPosition = nil
-local lastUpdateTime = tick()
-
-local function resolveTargetVelocity(jamklestarget)
-    if getgenv().jamkles.Resolver.Enabled then
-        if getgenv().jamkles.Resolver.Method == "RecalculateVelocity" then
-            local currentTime = tick()
-            local deltaTime = currentTime - lastUpdateTime
-
-            if
-                lastPosition and
-                    jamklestarget.Character:FindFirstChild(getgenv().jamkles.Resolver.PredictionSettings.HitPart)
-             then
-                local resolvedVelocity =
-                    (jamklestarget.Character[getgenv().jamkles.Resolver.PredictionSettings.aim_part].Position -
-                    lastPosition) /
-                    deltaTime
-                lastPosition = jamklestarget.Character[getgenv().jamkles.Resolver.PredictionSettings.aim_part].Position
-                lastUpdateTime = currentTime
-                return resolvedVelocity
-            else
-                lastPosition = jamklestarget.Character[getgenv().jamkles.Resolver.PredictionSettings.aim_part].Position
-                lastUpdateTime = currentTime
-            end
-        end
-    end
-
-    return jamklestarget.Character[getgenv().jamkles.Resolver.PredictionSettings.aim_part].Velocity
-end
-if jamkles.camlock.AntiAimView == true then
-    if jamklestarget then
-        local a = math.huge
-        local b = nil
-
-        for i, v in pairs(game.Players:GetPlayers()) do
-            if
-                v ~= Client and v.Character and v.Character:FindFirstChild("Head") and
-                    v.Character:FindFirstChild("HumanoidRootPart")
-             then
-                local c = game.Workspace.CurrentCamera:WorldToViewportPoint(v.Character.Head.Position)
-                local d = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(c.X, c.Y)).Magnitude
-                if a > d then
-                    b = v
-                    a = d
-                end
-            end
-        end
-
-        return b
-    elseif jamklestarget == nil then
-        wait()
-    end
-end
-
-if jamkles.VisualEffects.ColorCorrection == true then
-    ColorCorrection.Brightness = jamkles.VisualEffects.ColorCorrectionBrightness
-    ColorCorrection.Contrast = jamkles.VisualEffects.ColorCorrectionContrast
-    ColorCorrection.Saturation = jamkles.VisualEffects.ColorCorrectionSaturation
-end
-
-function CalculateAimPoint()
-    if jamklestarget and jamklestarget.Character then
-        if jamkles.camlock.AntiGroundShots then
-            AimPoint =
-                jamklestarget.Character[jamkles.camlock.aim_part].Position +
-                Vector3.new(
-                    jamklestarget.Character[jamkles.camlock.aim_part].Velocity.X,
-                    (jamklestarget.Character[jamkles.camlock.aim_part].Velocity.Y * 0.5),
-                    jamklestarget.Character[jamkles.camlock.aim_part].Velocity.Z
-                ) *
-                    jamkles.camlock.prediction
-        else
-            AimPoint =
-                jamklestarget.Character[jamkles.camlock.aim_part].Position +
-                jamklestarget.Character[jamkles.camlock.aim_part].Velocity * jamkles.camlock.prediction
-        end
-    end
-end
-
-function ElectricHitEffect(Position)
-    local Part = Instance.new("Part")
-    Part.Position = Position
-    Part.CanCollide = false
-    Part.Anchored = true
-    Part.Transparency = 1
-    Part.Parent = workspace
-
-    local Attachment = Instance.new("Attachment")
-    Attachment.Parent = Part
-
-    local ParticleEmitter2 = Instance.new("ParticleEmitter")
-    ParticleEmitter2.Name = "ParticleEmitter2"
-    ParticleEmitter2.FlipbookFramerate = NumberRange.new(20, 20)
-    ParticleEmitter2.Lifetime = NumberRange.new(0.19, 0.38)
-    ParticleEmitter2.FlipbookLayout = Enum.ParticleFlipbookLayout.Grid4x4
-    ParticleEmitter2.SpreadAngle = Vector2.new(360, 360)
-    ParticleEmitter2.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.209842, 0.5), NumberSequenceKeypoint.new(0.503842, 0.263333), NumberSequenceKeypoint.new(0.799842, 0.5), NumberSequenceKeypoint.new(1, 1)})
-    ParticleEmitter2.LightEmission = 1
-    ParticleEmitter2.Color = ColorSequence.new(Color3.fromRGB(103, 192, 253))
-    ParticleEmitter2.VelocitySpread = 360
-    ParticleEmitter2.Speed = NumberRange.new(0.0161231, 0.0161231)
-    ParticleEmitter2.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 4.3125), NumberSequenceKeypoint.new(0.3985056, 7.9375), NumberSequenceKeypoint.new(1, 10)})
-    ParticleEmitter2.Enabled = false
-    ParticleEmitter2.ZOffset = 0.15
-    ParticleEmitter2.Rate = 100
-    ParticleEmitter2.Texture = "http://www.roblox.com/asset/?id=12394566430"
-    ParticleEmitter2.FlipbookMode = Enum.ParticleFlipbookMode.OneShot
-    ParticleEmitter2.Rotation = NumberRange.new(39, 999)
-    ParticleEmitter2.Orientation = Enum.ParticleOrientation.VelocityParallel
-    ParticleEmitter2.Parent = Attachment
-
-    ParticleEmitter2:Emit()
-end
-
-local function setupHitMarker(plr)
-    plr.CharacterAdded:Connect(function(char)
-        local humanoid = char:WaitForChild("Humanoid")
-        local oldHealth = humanoid.Health
-
-        local connection
-        connection = humanoid.HealthChanged:Connect(function(health)
-            if health < oldHealth then
-                if plr == jamklestarget then
-                    if jamkles.HitEffects.Enabled then
-                        ElectricHitEffect(plr.Character.HumanoidRootPart.CFrame.Position)
-                    end
-                end
-            end
-            oldHealth = health
-            if health == 0 then
-                connection:Disconnect()
-            end
-        end)
-    end)
-end
-
--- First detection block
-for i, plr in pairs(game.Players:GetPlayers()) do
-    setupHitMarker(plr)
-end
-
--- Second detection block
-for i, plr in pairs(game.Players:GetChildren()) do
-    local char = plr.Character
-    local humanoid = char and char:FindFirstChild("Humanoid")
-    if humanoid then
-        local oldHealth = humanoid.Health
-        local connection
-        
-        connection = humanoid.HealthChanged:Connect(function(health)
-            if health < oldHealth then
-                if plr == jamklestarget then
-                    if jamkles.HitEffects.Enabled then
-                        ElectricHitEffect(plr.Character.HumanoidRootPart.CFrame.Position)
-                    end
-                end
-            end
-            oldHealth = health
-            if health == 0 then
-                connection:Disconnect()
-            end
-        end)
-    end
-end
+-- Self Chams toggle
+Menu.CheckBox("Visuals", "Chams", "Self Chams", false, function(Bool)
+   SelfChams = Bool
+end)
+
+-- Material Dropdown for Self Chams
+Menu.ComboBox("Visuals", "Chams", "Material", "Forcefield", {"Forcefield", "Neon", "Glass"}, function(option)
+    SelfChamsColor = option
+end)
+
+-- Hit Chams toggle
+Menu.CheckBox("Visuals", "Chams", "Hit Chams", false, function(Bool)
+    getgenv().Settings.FearLas.OnHit.Hitchams.Enabled = Bool
+end)
+
+-- Material Dropdown for Hit Chams
+Menu.ComboBox("Visuals", "Chams", "Material", "Forcefield", {"Forcefield", "Glass", "Neon", "Plastic", "Brick"}, function(option)
+    getgenv().Settings.FearLas.OnHit.Hitchams.Material = object
+end)
+
+Menu.ComboBox("Combat", "TargetLock", "AirPart", "LowerTorso", {"LowerTorso", "Head", "right foot", "HumanoidRootpart", "Brick"}, function(option)
+    getgenv().Settings.FearLas.AimPart = option
+end)
